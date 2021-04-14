@@ -23,10 +23,16 @@ converts the entire GeoTIFF file to CSV output into the specified file and also 
 
 See [WorldPop.sh](scripts/WorldPop.sh) to extract data for 2020 year in WGS84 coordinates.
 
+![](https://mw1.google.com/ges/dd/images/WorldPop_GP_100m_pop_sample.png)
+
 ## [MOD17A3HGF.006: Terra Net Primary Production Gap-Filled Yearly Global 500m](https://developers.google.com/earth-engine/datasets/catalog/MODIS_006_MOD17A3HGF)
 
 See [AnnualNPP.sh](scripts/AnnualNPP.sh) to extract the entire dataset and convert it into WGS84 coordinates.
 
+![](https://mw1.google.com/ges/dd/images/MODIS_006_MOD17A3HGF_sample.png)
+
 ## [GFS: Global Forecast System 384-Hour Predicted Atmosphere Data](https://developers.google.com/earth-engine/datasets/catalog/NOAA_GFS0P25)
 
 See [GFS.sh](scripts/GFS.sh) to extract data for date "2021/04/13" and forecasting interval 384 hours in WGS84 coordinates.
+
+![](https://mw1.google.com/ges/dd/images/NOAA_GFS0P25_sample.png)
