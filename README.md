@@ -1,4 +1,4 @@
-# Google Earth Engine raster datasets extraction project
+# Google Earth Engine raster to BigQuery SQL convertion project
 
 To extract big rasters like to dozens of gygabytes each from Google Earth Engine (GEE) that's required to have enough RAM+SWAP space for rasters fetching.
 Per-chunk downloading process doesn't require lots of memory while there are no network or server errors. Otherwise, memory
