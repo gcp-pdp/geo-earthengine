@@ -1,4 +1,5 @@
 #!/bin/sh
+# WGS 84
 
 CREDENTIALS="/root/gee-export.json"
 COLLECTION="projects/earthengine-public/assets/WorldPop/GP/100m/pop"
@@ -15,6 +16,6 @@ do
         echo "Image already downloaded: ${NAME}.tif"
     else
         echo "Fetching Image: $IMAGE -> ${NAME}"
-        gdal_translate --config GDAL_CACHEMAX 30000 --config GDAL_HTTP_MAX_RETRY 100 --config GDAL_HTTP_RETRY_DELAY 600 -oo BLOCK_SIZE=2000 "$IMAGE" "${NAME}.tif"
+        gdal_translate --config GDAL_CACHEMAX 30000 --config GDAL_HTTP_RETRY_DELAY 600 -oo BLOCK_SIZE=2000 "$IMAGE" "${NAME}.tif"
     fi
 done
