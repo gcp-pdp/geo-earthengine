@@ -16,6 +16,11 @@ Use provided script [geotif-to-bqcsv.py](scripts/geotif-to-bqcsv.py) to convert 
 ```
 ./geotif-to-bqcsv.py GeoTIFF_file [CSV_file]
 ```
+or for batch conversion:
+```
+find . -name '*.tif' -print0 | parallel -0 geotif-to-bqcsv.py '{}' '{}'.csv
+```
+
 With just mandatory first argument the script returns corresponding BigQuery table schema only. With the optional second argument this script
 converts the entire GeoTIFF file to CSV output into the specified file and also prints the schema too.
 
