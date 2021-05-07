@@ -22,4 +22,7 @@ do
         echo "Fetching Image: $IMAGE -> ${NAME}"
         gdal_translate --config GDAL_CACHEMAX 30000 --config GDAL_HTTP_RETRY_DELAY 600 -oo BLOCK_SIZE=1000 "$IMAGE" "${NAME}.tif"
     fi
+    # add metadata
+    year=$(echo "$IMAGE" | cut -f1 -d "_")
+    gdal_edit.py -mo year="$year" "${NAME}.tif"
 done
