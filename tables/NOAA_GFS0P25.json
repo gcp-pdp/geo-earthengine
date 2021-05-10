@@ -1,0 +1,87 @@
+[
+    {
+        "name": "geography",
+        "type": "GEOGRAPHY",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    },
+    {
+        "name": "creation_time",
+        "type": "DATETIME",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    },
+    {
+        "name": "",
+        "type": "FLOAT",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    },
+    {
+        "name": "forecast_hours",
+        "type": "INTEGER",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    },
+    {
+        "name": "forecast_time",
+        "type": "DATE",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    },
+    {
+        "name": "temperature_2m_above_ground",
+        "type": "FLOAT",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    },
+    {
+        "name": "specific_humidity_2m_above_ground",
+        "type": "FLOAT",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    },
+    {
+        "name": "relative_humidity_2m_above_ground",
+        "type": "FLOAT",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    },
+    {
+        "name": "u_component_of_wind_10m_above_ground",
+        "type": "FLOAT",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    },
+    {
+        "name": "v_component_of_wind_10m_above_ground",
+        "type": "FLOAT",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    },
+    {
+        "name": "total_precipitation_surface",
+        "type": "FLOAT",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    },
+    {
+        "name": "precipitable_water_entire_atmosphere",
+        "type": "FLOAT",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    },
+    {
+        "name": "total_cloud_cover_entire_atmosphere",
+        "type": "FLOAT",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    },
+    {
+        "name": "downward_shortwave_radiation_flux",
+        "type": "FLOAT",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    }
+]
+
