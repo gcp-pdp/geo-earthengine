@@ -1,5 +1,17 @@
 [
     {
+        "name": "start_hour",
+        "type": "TIMESTAMP",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    },
+    {
+        "name": "end_hour",
+        "type": "TIMESTAMP",
+        "mode": "REQUIRED",
+        "description": "TODO"
+    },
+    {
         "name": "Downward_Long_Wave_Radp_Flux_surface_6_Hour_Average",
         "type": "FLOAT",
         "mode": "REQUIRED",
