@@ -14,6 +14,7 @@ import os
 import sys
 from osgeo import gdal, osr
 import numpy as np
+from datetime import datetime
 
 # default GDAL block size for chunk-by-chunk processing
 block_size = 256
@@ -30,13 +31,35 @@ xsize, ysize = ds.RasterXSize, ds.RasterYSize
 # print schema (GDAL bands datatype is the same always)
 dt = ds.GetRasterBand(1).DataType
 if dt in [gdal.GDT_Byte, gdal.GDT_Int16, gdal.GDT_UInt16, gdal.GDT_Int32, gdal.GDT_UInt32]:
-    outtype = 'INT64'
+    outtype = 'INTEGER'
     fmt = '%d'
 else:
-    outtype = 'FLOAT64'
+    outtype = 'FLOAT'
     fmt = '%g'
-fmt =  '"POINT(%.10g %.10g)",' + ((fmt + ',') * ds.RasterCount).rstrip(',')
-print (','.join(['geography:GEOGRAPHY']+[f'{ds.GetRasterBand(iband+1).GetDescription()}:{outtype}' for iband in range(ds.RasterCount)]))
+
+mds = ds.GetMetadata()
+if 'AREA_OR_POINT' in mds:
+    del mds['AREA_OR_POINT']
+mfmt = ['']
+mfld = []
+mtps = []
+for md in mds:
+    if 'country' == md:
+        mfmt.append('%s')
+        mfld.append(mds[md])
+        mtps.append(f'{md}:STRING')
+    if '_time' in md:
+        dt = datetime.utcfromtimestamp(float(mds[md])/1000).strftime('%Y-%m-%d')
+        mfmt.append('%s')
+        mfld.append(dt)
+        mtps.append(f'{md}:DATE')
+    elif 'hours' in md or 'year' in md:
+        mfmt.append('%d')
+        mfld.append(int(mds[md]))
+        mtps.append(f'{md}:INTEGER')
+
+fmt =  '"POINT(%.10g %.10g)"' + ','.join(mfmt) + ',' + ((fmt + ',') * ds.RasterCount).rstrip(',')
+print (','.join(['geography:GEOGRAPHY']+mtps+[f'{ds.GetRasterBand(iband+1).GetDescription()}:{outtype}' for iband in range(ds.RasterCount)]))
 
 # process the file only when the output file specified
 if len(sys.argv) <= 2:
@@ -50,7 +73,7 @@ with open(outfile, 'w') as fd:
     for ix,iy in np.ndindex((int(np.round(xsize/block_size+0.5)), int(np.round(ysize/block_size+0.5)))):
         xblock = int(np.min([xsize-ix*block_size, block_size]))
         yblock = int(np.min([ysize-iy*block_size, block_size]))
-        array = ds.ReadAsArray(ix, iy, xblock, yblock)
+        array = ds.ReadAsArray(ix*block_size, iy*block_size, xblock, yblock)
         # unify dimentions for single band raster
         if len(array.shape) == 2:
             array = np.expand_dims(array, axis=0)
@@ -62,4 +85,4 @@ with open(outfile, 'w') as fd:
         geo_xs = gt[0] + (xs + 0.5) * gt[1] + (ys + 0.5) * gt[2]
         geo_ys = gt[3] + (xs + 0.5) * gt[4] + (ys + 0.5) * gt[5]
 
-        fd.write('\n'.join([fmt % (x, y, *vals) for (x,y,vals) in zip(geo_xs.ravel(), geo_ys.ravel(), array)]))
+        fd.write('\n'.join([fmt % (x, y, *mfld, *vals) for (x,y,vals) in zip(geo_xs.ravel(), geo_ys.ravel(), array)]) + '\n')

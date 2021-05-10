@@ -4,7 +4,6 @@
 # WGS 84
 
 CREDENTIALS="/root/gee-export.json"
-CREDENTIALS="/Users/mbg/gee-export.json"
 COLLECTION="projects/earthengine-public/assets/NOAA/GFS0P25"
 DATE="2021/04/13"
 INTERVAL=384
@@ -21,6 +20,9 @@ do
         echo "Image already downloaded: ${NAME}.tif"
     else
         echo "Fetching Image: $IMAGE -> ${NAME}"
-        gdal_translate --config GDAL_CACHEMAX 30000 --config GDAL_HTTP_RETRY_DELAY 600 -oo BLOCK_SIZE=2000 "$IMAGE" "${NAME}.tif"
+        gdal_translate --config GDAL_CACHEMAX 30000 --config GDAL_HTTP_RETRY_DELAY 600 -oo BLOCK_SIZE=1000 "$IMAGE" "${NAME}.tif"
     fi
+    # add metadata
+    year=$(echo "$IMAGE" | cut -f1 -d "_")
+    gdal_edit.py -mo year="$year" "${NAME}.tif"
 done
