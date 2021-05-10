@@ -21,19 +21,19 @@
         "name": "Upward_Long_Wave_Radp_Flux_surface_6_Hour_Average",
         "type": "FLOAT",
         "mode": "REQUIRED",
-        "description": ""
+        "description": "Upward long-wave radiation flux at surface, 6-hour average. W/m^2"
     },
     {
         "name": "Downward_Short_Wave_Radiation_Flux_surface_6_Hour_Average",
         "type": "FLOAT",
         "mode": "REQUIRED",
-        "description": ""
+        "description": "Downward short-wave radiation flux at surface, 6-hour average. W/m^2"
     },
     {
         "name": "Upward_Short_Wave_Radiation_Flux_surface_6_Hour_Average",
         "type": "FLOAT",
         "mode": "REQUIRED",
-        "description": ""
+        "description": "Upward short-wave radiation flux at surface, 6-hour average. W/m^2"
     },
     {
         "name": "Geopotential_height_surface",
