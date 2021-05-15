@@ -74,6 +74,8 @@ with open(outfile, 'w') as fd:
         xblock = int(np.min([xsize-ix*block_size, block_size]))
         yblock = int(np.min([ysize-iy*block_size, block_size]))
         array = ds.ReadAsArray(ix*block_size, iy*block_size, xblock, yblock)
+        if array.size == 0:
+            continue
         # unify dimentions for single band raster
         if len(array.shape) == 2:
             array = np.expand_dims(array, axis=0)
