@@ -1,2 +1,26 @@
 [
+    {
+        "name": "geography",
+        "type": "GEOGRAPHY",
+        "mode": "REQUIRED",
+        "description": "WGS84 Point Geometry"
+    },
+    {
+        "name": "country",
+        "type": "STRING",
+        "mode": "REQUIRED",
+        "description": "Country"
+    },
+    {
+        "name": "year",
+        "type": "INTEGER",
+        "mode": "REQUIRED",
+        "description": "Year"
+    },
+    {
+        "name": "population",
+        "type": "FLOAT",
+        "mode": "REQUIRED",
+        "description": "Estimated number of people residing in each grid cell. Estimated range [0, 21171]"
+    }
 ]

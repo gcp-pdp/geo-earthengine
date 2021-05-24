@@ -1,0 +1,26 @@
+[
+    {
+        "name": "geography",
+        "type": "GEOGRAPHY",
+        "mode": "REQUIRED",
+        "description": "WGS84 Point Geometry"
+    },
+    {
+        "name": "year",
+        "type": "INTEGER",
+        "mode": "REQUIRED",
+        "description": "Year"
+    },
+    {
+        "name": "npp",
+        "type": "INTEGER",
+        "mode": "REQUIRED",
+        "description": "Net primary productivity, kg*C/m^2. Range [-30000, 32700] with scale 0.0001"
+    },
+    {
+        "name": "npp_qc",
+        "type": "INTEGER",
+        "mode": "REQUIRED",
+        "description": "Quality control percentage, %. Range [0, 100]"
+    }
+]
