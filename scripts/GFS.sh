@@ -2,11 +2,13 @@
 # https://developers.google.com/earth-engine/datasets/catalog/NOAA_GFS0P25
 # https://gis.stackexchange.com/questions/335566/understanding-noaa-gfs0p25-dataset-of-google-earth-engine
 # WGS 84
+# Use as
+# GFS.sh "2021/04/13" 384
 
 CREDENTIALS="/root/gee-export.json"
 COLLECTION="projects/earthengine-public/assets/NOAA/GFS0P25"
-DATE="2021/04/13"
-INTERVAL=384
+DATE="$1"
+INTERVAL="$2"
 
 export "GOOGLE_APPLICATION_CREDENTIALS=$CREDENTIALS"
 
@@ -22,7 +24,4 @@ do
         echo "Fetching Image: $IMAGE -> ${NAME}"
         gdal_translate --config GDAL_CACHEMAX 30000 --config GDAL_HTTP_RETRY_DELAY 600 -oo BLOCK_SIZE=1000 "$IMAGE" "${NAME}.tif"
     fi
-    # add metadata
-    year=$(echo "$IMAGE" | cut -f1 -d "_")
-    gdal_edit.py -mo year="$year" "${NAME}.tif"
 done
