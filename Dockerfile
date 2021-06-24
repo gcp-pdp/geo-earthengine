@@ -15,15 +15,12 @@ RUN apk add --update --no-cache \
 
 COPY --from=builder /go/bin/gcsfuse /usr/local/bin
 
-#RUN curl -sSL https://sdk.cloud.google.com | bash
-
 COPY ./scripts /root/scripts
 
 RUN python3 -m pip install gdal numpy
 
 RUN mkdir -p /usr/share/gcs/data
 
-#ENV PATH $PATH:/root/google-cloud-sdk/bin:/root/scripts
 ENV PATH $PATH:/root/scripts
 
 WORKDIR /root/scripts

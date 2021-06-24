@@ -19,10 +19,6 @@ if [ -z "$DATA_DIR" ] ; then
     DATA_DIR=$(pwd)
 fi
 
-#gcsfuse --foreground --debug_fuse --debug_http $BUCKET $DATA_DIR
-
-#gcloud auth activate-service-account --key-file $GOOGLE_APPLICATION_CREDENTIALS
-
 cat << EOF >> modis.prj
 PROJCS["MODIS Sinusoidal",
     GEOGCS["WGS 84",
@@ -106,19 +102,6 @@ convert_tif_to_csv() {
   fi
 }
 
-
-# Upload to GCS
-upload_to_gcs() {
-  FILE_NAME=$1
-  GCS_PATH="${BUCKET}/${PREFIX}"
-  EXTENSION="${FILE_NAME##*.}"
-  if [ -f "${FILE_NAME}" ]
-  then
-    echo "Uploading file: $FILE_NAME"
-    gsutil -m cp "$FILE_NAME" "gs://${GCS_PATH}/${EXTENSION}/"
-  fi
-}
-
 # main
 IMAGES=$(list_images)
 
@@ -136,9 +119,4 @@ do
     fetch_image $IMAGE $TIF_FILE
   fi
   convert_tif_to_csv $TIF_FILE $CSV_FILE
-#  upload_to_gcs $TIF_FILE
-#  upload_to_gcs $CSV_FILE
-#  rm -f $TIF_FILE $CSV_FILE
 done
-
-#fusermount -u $DATA_DIR
