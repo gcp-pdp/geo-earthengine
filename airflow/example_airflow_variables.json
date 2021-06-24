@@ -1,0 +1,6 @@
+{
+    "destination_dataset_project_id": "gcp-pdp-weather-dev",
+    "destination_dataset_name": "geo_weather_dev",
+    "export_max_active_runs": 3,
+    "output_bucket": "gcp-pdp-weather-dev"
+}

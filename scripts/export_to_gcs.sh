@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+
+while getopts o:p:d:y:f: flag
+do
+  case "${flag}" in
+    o) BUCKET=${OPTARG};;
+    p) PREFIX=${OPTARG};;
+    d) DATE=${OPTARG};;
+    y) YEAR=${OPTARG};;
+    f) TASK=${OPTARG};;
+  esac
+done
+
+if [ -z "$TASK" ] ; then
+    echo "task must be supplied"
+fi
+
+if [ -z "$DATA_DIR" ] ; then
+    DATA_DIR=$(pwd)
+fi
+
+#gcsfuse --foreground --debug_fuse --debug_http $BUCKET $DATA_DIR
+
+#gcloud auth activate-service-account --key-file $GOOGLE_APPLICATION_CREDENTIALS
+
+cat << EOF >> modis.prj
+PROJCS["MODIS Sinusoidal",
+    GEOGCS["WGS 84",
+        DATUM["WGS_1984",
+            SPHEROID["WGS 84",6378137,298.257223563,
+                AUTHORITY["EPSG","7030"]],
+            AUTHORITY["EPSG","6326"]],
+        PRIMEM["Greenwich",0,
+            AUTHORITY["EPSG","8901"]],
+        UNIT["degree",0.01745329251994328,
+            AUTHORITY["EPSG","9122"]],
+        AUTHORITY["EPSG","4326"]],
+    PROJECTION["Sinusoidal"],
+    PARAMETER["false_easting",0.0],
+    PARAMETER["false_northing",0.0],
+    PARAMETER["central_meridian",0.0],
+    PARAMETER["semi_major",6371007.181],
+    PARAMETER["semi_minor",6371007.181],
+    UNIT["m",1.0],
+    AUTHORITY["SR-ORG","6974"]]
+EOF
+
+list_images() {
+  case "${TASK}" in
+    gfs)
+      COLLECTION="projects/earthengine-public/assets/NOAA/GFS0P25"
+      INTERVAL=384
+      IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "startTime='$DATE' and endTime='$DATE' and forecast_hours=$INTERVAL" \
+      | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
+      ;;
+    world_pop)
+      COLLECTION="projects/earthengine-public/assets/WorldPop/GP/100m/pop"
+      IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "year=$YEAR" | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
+      ;;
+    annual_npp)
+      COLLECTION="projects/earthengine-public/assets/MODIS/006/MOD17A3HGF"
+      IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
+      ;;
+  esac
+  echo $IMAGES
+}
+
+file_path() {
+  FILE_NAME=$1
+  EXTENSION="${FILE_NAME##*.}"
+  echo "$DATA_DIR/$PREFIX/$EXTENSION/$FILE_NAME"
+}
+
+fetch_image() {
+  IMAGE=$1
+  FILE=$2
+  echo "Fetching Image: $IMAGE -> ${FILE}"
+  case "${TASK}" in
+    gfs)
+      gdal_translate --config GDAL_CACHEMAX 30000 --config GDAL_HTTP_RETRY_DELAY 600 -oo BLOCK_SIZE=1000 "$IMAGE" "$FILE"
+      ;;
+    world_pop)
+      gdal_translate --config GDAL_CACHEMAX 30000 --config GDAL_HTTP_RETRY_DELAY 600 -oo BLOCK_SIZE=2000 "$IMAGE" "$FILE"
+      ;;
+    annual_npp)
+      gdalwarp --config GDAL_CACHEMAX 30000 --config GDAL_HTTP_RETRY_DELAY 600 \
+       -oo BLOCK_SIZE=2000 -s_srs modis.prj -t_srs WGS84 "$IMAGE" "$FILE"
+      ;;
+  esac
+}
+
+# Convert tif to csv
+convert_tif_to_csv() {
+  TIF_FILE=$1
+  CSV_FILE=$2
+  if [ -s "${CSV_FILE}" ]
+  then
+    echo "File ${CSV_FILE} is already exist"
+  elif [ -s "${TIF_FILE}" ]
+  then
+    echo "Converting file: $TIF_FILE -> $CSV_FILE"
+    ./geotif-to-bqcsv.py $TIF_FILE $CSV_FILE
+  else
+    echo "${TIF_FILE} does not exist"
+    exit 1
+  fi
+}
+
+
+# Upload to GCS
+upload_to_gcs() {
+  FILE_NAME=$1
+  GCS_PATH="${BUCKET}/${PREFIX}"
+  EXTENSION="${FILE_NAME##*.}"
+  if [ -f "${FILE_NAME}" ]
+  then
+    echo "Uploading file: $FILE_NAME"
+    gsutil -m cp "$FILE_NAME" "gs://${GCS_PATH}/${EXTENSION}/"
+  fi
+}
+
+# main
+IMAGES=$(list_images)
+
+for IMAGE in $IMAGES
+do
+  NAME=$(basename "$IMAGE")
+  TIF_FILE=$(file_path "$NAME.tif")
+  CSV_FILE=$(file_path "$NAME.csv")
+  mkdir -p $(dirname "$TIF_FILE")
+  mkdir -p $(dirname "$CSV_FILE")
+  if [ -s "${TIF_FILE}" ]
+  then
+    echo "Image already downloaded: ${TIF_FILE}"
+  else
+    fetch_image $IMAGE $TIF_FILE
+  fi
+  convert_tif_to_csv $TIF_FILE $CSV_FILE
+#  upload_to_gcs $TIF_FILE
+#  upload_to_gcs $CSV_FILE
+#  rm -f $TIF_FILE $CSV_FILE
+done
+
+#fusermount -u $DATA_DIR
