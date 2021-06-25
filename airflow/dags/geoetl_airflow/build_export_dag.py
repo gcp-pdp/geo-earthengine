@@ -85,7 +85,7 @@ def build_export_dag(
         task_id=task_id,
         name=task_id,
         namespace='default',
-        image='gcr.io/gcp-pdp-weather-dev/geo-exporter:0.5.3',
+        image='gcr.io/gcp-pdp-weather-dev/geo-exporter:0.6.0',
         cmds=["/bin/bash", "-c", cmd],
         secrets=[secret_volume],
         startup_timeout_seconds=120,

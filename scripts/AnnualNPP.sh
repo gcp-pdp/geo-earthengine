@@ -44,4 +44,7 @@ do
         -s_srs modis.prj -t_srs WGS84 \
         "$IMAGE" "${NAME}.tif"
     fi
+    # add metadata
+    year=$(echo "$NAME" | cut -f1 -d "_")
+    gdal_edit.py -mo year="$year" "${NAME}.tif"
 done

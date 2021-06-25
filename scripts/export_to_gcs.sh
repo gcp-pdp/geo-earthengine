@@ -81,6 +81,10 @@ fetch_image() {
     annual_npp)
       gdalwarp --config GDAL_CACHEMAX 30000 --config GDAL_HTTP_RETRY_DELAY 600 \
        -oo BLOCK_SIZE=2000 -s_srs modis.prj -t_srs WGS84 "$IMAGE" "$FILE"
+      # add metadata
+      NAME=$(basename "$IMAGE")
+      YEAR=$(echo "$NAME" | cut -f1 -d "_")
+      gdal_edit.py -mo year="$YEAR" "$FILE"
       ;;
   esac
 }

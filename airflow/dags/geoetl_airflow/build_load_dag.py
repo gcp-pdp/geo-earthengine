@@ -140,7 +140,6 @@ def build_load_dag(
                     field='year',
                     range_=PartitionRange(start=2000, end=3000, interval=1)
                 )
-                job_config.allow_jagged_rows = True
 
             table_ref = create_dataset(client, destination_dataset_name).table(table)
             load_job = client.load_table_from_uri(uri, table_ref, job_config=job_config)
