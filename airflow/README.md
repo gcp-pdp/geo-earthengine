@@ -37,19 +37,28 @@ Airflow DAGs for exporting and loading the geo weather data to Google BigQuery:
     ```
    
     Note that if Composer API is not enabled the command above will auto prompt to enable it.
-    
-3. Create GCP Service Account with key file and create Kubernetes secret:
+   
+3. [Optional] Create node pool for exporting annual npp and world pop.
+   
+    ```bash
+    gcloud container node-pools create highmem-node-pool \
+    --cluster=${GKE_CLUSTER} \
+    --machine-type=n1-highmem-8 --disk-size 100GB \
+    --num-nodes=1
+    ```
+   
+4. Create GCP Service Account with key file and create Kubernetes secret:
     ```bash
     gcloud container clusters get-credentials {CLUSTER_ID} --zone {ZONE} --project ${PROJECT}
     kubectl create secret generic service-account --from-file service-account.json={SERVICE_ACCOUNT_KEY.json} 
     ```
 
-4. Follow the steps in [Configuring Airflow Variables](#configuring-airflow-variables) to configure Airflow variables.
+5. Follow the steps in [Configuring Airflow Variables](#configuring-airflow-variables) to configure Airflow variables.
     
-5. Follow the steps in [Deploying Airflow DAGs](#deploying-airflow-dags) 
+6. Follow the steps in [Deploying Airflow DAGs](#deploying-airflow-dags) 
 to deploy Airflow DAGs to Cloud Composer Environment.
  
-6. Follow the steps [here](https://cloud.google.com/composer/docs/how-to/managing/creating#notification) 
+7. Follow the steps [here](https://cloud.google.com/composer/docs/how-to/managing/creating#notification) 
 to configure email notifications.
 
 ## Configuring Airflow Variables
