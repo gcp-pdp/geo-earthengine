@@ -60,6 +60,7 @@ def build_export_dag(
             'request_memory': "64Mi",
             'limit_memory': '128Mi'
         }
+        node_selector = 'default-pool'
     elif export_type == 'world_pop':
         cmd = 'export_to_gcs.sh -f {type} -y {year} -o {bucket} -p export/{type}/year={year}' \
             .format(type=export_type, year='{{ execution_date.strftime("%Y") }}', bucket=output_bucket)
@@ -69,6 +70,7 @@ def build_export_dag(
             'request_memory': "12Gi",
             'limit_memory': '12Gi',
         }
+        node_selector = 'highmem-node-pool'
     elif export_type == 'annual_npp':
         cmd = 'export_to_gcs.sh -f {type} -o {bucket} -p export/{type}' \
             .format(type=export_type, bucket=output_bucket)
@@ -78,6 +80,7 @@ def build_export_dag(
             'request_memory': "32Gi",
             'limit_memory': '32Gi',
         }
+        node_selector = 'highmem-node-pool'
 
     task_id = 'export-{export_type}'.format(export_type=export_type).replace('_', '-')
     data_dir = '/usr/share/gcs/data'
@@ -97,7 +100,7 @@ def build_export_dag(
         resources=resources,
         is_delete_operator_pod=True,
         full_pod_spec=build_pod_spec(name=task_id, bucket=output_bucket, data_dir=data_dir),
-        node_selectors={'cloud.google.com/gke-nodepool': 'node-pool-2'},
+        node_selectors={'cloud.google.com/gke-nodepool': node_selector},
         dag=dag
     )
 
