@@ -24,6 +24,7 @@ def build_export_dag(
         namespace='default',
         resources=None,
         node_selector='default-pool',
+        excluded_images=''
 ):
     """Build Export DAG"""
 
@@ -58,14 +59,14 @@ def build_export_dag(
     )
 
     if export_type == 'gfs':
-        cmd = 'export_to_gcs.sh -f {type} -d {date} -o {bucket} -p export/{type}/date={date}' \
-            .format(type=export_type, date='{{ ds }}', bucket=output_bucket)
+        cmd = 'export_to_gcs.sh -f {type} -d {date} -o {bucket} -e {exclude} -p export/{type}/date={date}' \
+            .format(type=export_type, date='{{ ds }}', bucket=output_bucket, exclude=excluded_images)
     elif export_type == 'world_pop':
-        cmd = 'export_to_gcs.sh -f {type} -y {year} -o {bucket} -p export/{type}/year={year}' \
-            .format(type=export_type, year='{{ execution_date.strftime("%Y") }}', bucket=output_bucket)
+        cmd = 'export_to_gcs.sh -f {type} -y {year} -o {bucket} -e {exclude} -p export/{type}/year={year}' \
+            .format(type=export_type, year='{{ execution_date.strftime("%Y") }}', bucket=output_bucket, exclude=excluded_images)
     elif export_type == 'annual_npp':
-        cmd = 'export_to_gcs.sh -f {type} -o {bucket} -p export/{type}' \
-            .format(type=export_type, bucket=output_bucket)
+        cmd = 'export_to_gcs.sh -f {type} -o {bucket} -e {exclude} -p export/{type}' \
+            .format(type=export_type, bucket=output_bucket, exclude=excluded_images)
 
     task_id = 'export-{export_type}'.format(export_type=export_type).replace('_', '-')
     data_dir = '/usr/share/gcs/data'

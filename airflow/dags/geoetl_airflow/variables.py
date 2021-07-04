@@ -27,6 +27,7 @@ def read_export_dag_vars(var_prefix, **kwargs):
         'resources': read_var('resources', var_prefix, False, True, **kwargs),
         'export_max_active_runs': export_max_active_runs,
         'node_selector': read_var('node_selector', var_prefix, False, False, **kwargs),
+        'excluded_images': read_var('excluded_images', var_prefix, False, False, **kwargs),
     }
 
     return vars
