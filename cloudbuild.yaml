@@ -3,7 +3,7 @@ steps:
     args: [ "fetch", "--unshallow" ]
   - name: gcr.io/cloud-builders/git
     entrypoint: /bin/bash
-    args: [ "-c", "echo ${_MAJOR}.${_MINOR}.${_PATCH}.$(git rev-list --count HEAD) > /workspace/IMAGE_TAG" ]
+    args: [ "-c", "echo ${_MAJOR}.${_MINOR}.${_PATCH}-$(git rev-list --count HEAD) > /workspace/IMAGE_TAG" ]
   - name: gcr.io/cloud-builders/docker
     entrypoint: 'bash'
     args: [ '-c', 'docker pull gcr.io/$PROJECT_ID/geo-exporter:latest || exit 0' ]
