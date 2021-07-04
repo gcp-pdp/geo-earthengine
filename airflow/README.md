@@ -43,7 +43,7 @@ Airflow DAGs for exporting and loading the geo weather data to Google BigQuery:
     ```bash
     gcloud container node-pools create highmem-node-pool \
     --cluster=${GKE_CLUSTER} \
-    --machine-type=n1-highmem-8 --disk-size 100GB \
+    --machine-type=n1-highmem-8 --disk-size 1500GB \
     --num-nodes=1
     ```
    

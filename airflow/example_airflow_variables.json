@@ -2,5 +2,30 @@
     "destination_dataset_project_id": "gcp-pdp-weather-dev",
     "destination_dataset_name": "geo_weather_dev",
     "export_max_active_runs": 3,
-    "output_bucket": "gcp-pdp-weather-dev"
+    "output_bucket": "gcp-pdp-weather-dev",
+    "image_name": "gcr.io/gcp-pdp-weather-dev/geo-exporter",
+    "image_version": "0.6.0",
+    "image_pull_policy": "Always",
+    "namespace": "default",
+    "gfs_resources": {
+        "request_cpu": "100m",
+        "limit_cpu": "500m",
+        "request_memory": "64Mi",
+        "limit_memory": "128Mi"
+    },
+    "gfs_node_selector": "default-pool",
+    "world_pop_resources": {
+        "request_cpu": "100m",
+        "limit_cpu": "3",
+        "request_memory": "32Gi",
+        "limit_memory": "32Gi"
+    },
+    "world_pop_node_selector": "highmem-node-pool",
+    "annual_npp_resources": {
+        "request_cpu": "100m",
+        "limit_cpu": "2",
+        "request_memory": "32Gi",
+        "limit_memory": "32Gi"
+    },
+    "annual_npp_node_selector": "highmem-node-pool"
 }
