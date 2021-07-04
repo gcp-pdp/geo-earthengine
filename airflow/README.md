@@ -81,6 +81,13 @@ to configure email notifications.
 | `export_start_date` | export start date, default: `2019-04-22` |
 | `export_end_date` | export end date, used for integration testing, default: None |
 | `export_schedule_interval` | export cron schedule, default: `0 1 * * *` |
+| `image_name` | exporter docker image name, default: `gcr.io/gcp-pdp-weather-dev/geo-exporter` |
+| `image_version` | exporter docker image version |
+| `image_pull_policy` | exporter docker image pull policy, default: `Always` |
+| `namespace` | namespace that exporter pod will be running in, default: `default` |
+| `resources` | exporter container resources |
+| `node_selector` | node-pool label that exporter pod will be scheduled, default: `default-pool` |
+| `excluded_images` | comma separated list of images that will not be exported |
 | `notification_emails` | comma-separated list of emails where notifications on DAG failures, retries and successes will be delivered. |
 | `export_max_active_runs` | max active DAG runs for export, default: `3` |
 | `destination_dataset_project_id` | The project id where destination BigQuery dataset is |

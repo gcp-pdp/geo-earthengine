@@ -1,0 +1,14 @@
+steps:
+  - name: gcr.io/cloud-builders/git
+    args: [ "fetch", "--unshallow" ]
+  - name: gcr.io/cloud-builders/git
+    entrypoint: /bin/bash
+    args: [ "-c", "echo ${_MAJOR}.${_MINOR}.${_PATCH}.$(git rev-list --count ${BRANCH_NAME}) > /workspace/IMAGE_TAG" ]
+  - name: gcr.io/kaniko-project/executor:latest
+    args:
+      - --destination=gcr.io/$PROJECT_ID/geo-exporter:$(cat /workspace/IMAGE_TAG)
+      - --cache=true
+substitutions:
+ _MAJOR: "1"
+ _MINOR: "0"
+ _PATCH: "0"
