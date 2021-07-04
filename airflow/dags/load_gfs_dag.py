@@ -15,6 +15,7 @@ DAG = build_load_dag(
     **read_load_dag_vars(
         var_prefix='gfs_',
         load_schedule_interval='30 12 * * *',
+        load_start_date='2021-06-01',
         load_max_active_runs=1,
     )
 )

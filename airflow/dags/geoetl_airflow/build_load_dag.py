@@ -67,7 +67,7 @@ def build_load_dag(
 
     dag = models.DAG(
         dag_id,
-        catchup=False if load_end_date is None else True,
+        catchup=False if load_start_date is None else True,
         schedule_interval=load_schedule_interval,
         max_active_runs=load_max_active_runs,
         default_args=default_dag_args)
