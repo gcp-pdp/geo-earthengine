@@ -3,11 +3,17 @@ steps:
     args: [ "fetch", "--unshallow" ]
   - name: gcr.io/cloud-builders/git
     entrypoint: /bin/bash
-    args: [ "-c", "echo ${_MAJOR}.${_MINOR}.${_PATCH}.$(git rev-list --count ${BRANCH_NAME}) > /workspace/IMAGE_TAG" ]
-  - name: gcr.io/kaniko-project/executor:latest
-    args:
-      - --destination=gcr.io/$PROJECT_ID/geo-exporter:$(cat /workspace/IMAGE_TAG)
-      - --cache=true
+    args: [ "-c", "echo ${_MAJOR}.${_MINOR}.${_PATCH}.$(git rev-list --count ${BRANCH_NAME}) > IMAGE_TAG" ]
+  - name: gcr.io/cloud-builders/docker
+    entrypoint: 'bash'
+    args: [ '-c', 'docker pull gcr.io/$PROJECT_ID/geo-exporter:latest || exit 0' ]
+  - name: gcr.io/cloud-builders/docker
+    entrypoint: /bin/bash
+    args: [ "-c", "docker build -t gcr.io/$PROJECT_ID/geo-exporter:$(cat IMAGE_TAG) -t gcr.io/$PROJECT_ID/geo-exporter:latest --cache-from eu.gcr.io/$PROJECT_ID/geo-exporter:latest ." ]
+  - name: gcr.io/cloud-builders/docker
+    entrypoint: /bin/bash
+    args: [ "-c", "docker push eu.gcr.io/$PROJECT_ID/geo-exporter:$(cat IMAGE_TAG)" ]
+images: ['gcr.io/$PROJECT_ID/geo-exporter:latest']
 substitutions:
  _MAJOR: "1"
  _MINOR: "0"
