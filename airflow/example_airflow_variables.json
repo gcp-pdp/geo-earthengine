@@ -3,6 +3,7 @@
     "destination_dataset_name": "geo_weather_dev",
     "export_max_active_runs": 3,
     "output_bucket": "gcp-pdp-weather-dev",
+    "output_path_prefix": "export",
     "image_name": "gcr.io/gcp-pdp-weather-dev/geo-exporter",
     "image_version": "0.6.0",
     "image_pull_policy": "Always",

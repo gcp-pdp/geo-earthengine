@@ -19,6 +19,7 @@ def read_export_dag_vars(var_prefix, **kwargs):
         'export_start_date': export_start_date,
         'export_end_date': export_end_date,
         'export_schedule_interval': read_var('export_schedule_interval', var_prefix, False, False, **kwargs),
+        'output_path_prefix': read_var('output_path_prefix', var_prefix, False, False, **kwargs),
         'notification_emails': read_var('notification_emails', None, False, False, **kwargs),
         'image_name': read_var('image_name', var_prefix, False, False, **kwargs),
         'image_version': read_var('image_version', var_prefix, False, False, **kwargs),
@@ -40,6 +41,7 @@ def read_load_dag_vars(var_prefix, **kwargs):
 
     vars = {
         'output_bucket': read_var('output_bucket', var_prefix, True, False, **kwargs),
+        'output_path_prefix': read_var('output_path_prefix', var_prefix, False, False, **kwargs),
         'destination_dataset_project_id': read_var('destination_dataset_project_id', var_prefix, True, False, **kwargs),
         'destination_dataset_name': read_var('destination_dataset_name', var_prefix, True, False, **kwargs),
         'notification_emails': read_var('notification_emails', None, False, False, **kwargs),
