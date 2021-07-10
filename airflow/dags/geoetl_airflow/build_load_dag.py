@@ -77,9 +77,13 @@ def build_load_dag(
 
     def add_load_tasks(task):
         if task == 'gfs':
-            output_prefix = '{path_prefix}/{task}/date={date}/csv/'.format(path_prefix=output_path_prefix, task=task, date='{{ds}}')
+            output_prefix = '{path_prefix}/{task}/date={date}/csv/'\
+                .format(path_prefix=output_path_prefix,
+                        task=task,
+                        date='{{ (execution_date - macros.timedelta(hours=9)).strftime("%Y-%m-%d") }}')
         elif task == 'world_pop':
-            output_prefix = '{path_prefix}/{task}/year={year}/csv/'.format(path_prefix=output_path_prefix, task=task, year='{{execution_date.strftime("%Y")}}')
+            output_prefix = '{path_prefix}/{task}/year={year}/csv/'\
+                .format(path_prefix=output_path_prefix, task=task, year='{{execution_date.strftime("%Y")}}')
         elif task == 'annual_npp':
             output_prefix = '{path_prefix}/{task}/csv/'.format(path_prefix=output_path_prefix, task=task)
 
