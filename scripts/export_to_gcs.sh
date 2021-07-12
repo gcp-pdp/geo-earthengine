@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-while getopts o:p:d:y:f: flag
+while getopts o:p:d:y:f:e: flag
 do
   case "${flag}" in
     o) BUCKET=${OPTARG};;
@@ -8,6 +8,7 @@ do
     d) DATE=${OPTARG};;
     y) YEAR=${OPTARG};;
     f) TASK=${OPTARG};;
+    e) EXCLUDE=${OPTARG};;
   esac
 done
 
@@ -112,12 +113,15 @@ IMAGES=$(list_images)
 for IMAGE in $IMAGES
 do
   NAME=$(basename "$IMAGE")
+  if [[ -n "$EXCLUDE" && ",$EXCLUDE," = *",$NAME,"* ]]; then
+    echo "Skip image $NAME"
+    continue
+  fi
   TIF_FILE=$(file_path "$NAME.tif")
   CSV_FILE=$(file_path "$NAME.csv")
   mkdir -p $(dirname "$TIF_FILE")
   mkdir -p $(dirname "$CSV_FILE")
-  if [ -s "${TIF_FILE}" ]
-  then
+  if [ -s "${TIF_FILE}" ]; then
     echo "Image already downloaded: ${TIF_FILE}"
   else
     fetch_image $IMAGE $TIF_FILE

@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import os.path
 import uuid
 from datetime import timedelta
 
@@ -18,6 +19,14 @@ def build_export_dag(
         notification_emails=None,
         export_schedule_interval='0 0 * * *',
         export_max_active_runs=None,
+        image_name='gcr.io/gcp-pdp-weather-dev/geo-exporter',
+        image_version='0.1.0',
+        image_pull_policy='Always',
+        namespace='default',
+        resources=None,
+        node_selector='default-pool',
+        excluded_images='',
+        output_path_prefix='export'
 ):
     """Build Export DAG"""
 
@@ -51,44 +60,32 @@ def build_export_dag(
         key='service-account.json'
     )
 
+    extra_args = ''
+    export_path = [output_path_prefix, export_type]
+
     if export_type == 'gfs':
-        cmd = 'export_to_gcs.sh -f {type} -d {date} -o {bucket} -p export/{type}/date={date}' \
-            .format(type=export_type, date='{{ ds }}', bucket=output_bucket)
-        resources = {
-            'request_cpu': "100m",
-            'limit_cpu': '500m',
-            'request_memory': "64Mi",
-            'limit_memory': '128Mi'
-        }
-        node_selector = 'default-pool'
+        date = '{{ (execution_date - macros.timedelta(hours=9)).strftime("%Y-%m-%d") }}'
+        export_path.append('date={date}'.format(date=date))
+        extra_args = '-d {date}'.format(date=date)
     elif export_type == 'world_pop':
-        cmd = 'export_to_gcs.sh -f {type} -y {year} -o {bucket} -p export/{type}/year={year}' \
-            .format(type=export_type, year='{{ execution_date.strftime("%Y") }}', bucket=output_bucket)
-        resources = {
-            'request_cpu': "100m",
-            'limit_cpu': '3',
-            'request_memory': "12Gi",
-            'limit_memory': '12Gi',
-        }
-        node_selector = 'highmem-node-pool'
-    elif export_type == 'annual_npp':
-        cmd = 'export_to_gcs.sh -f {type} -o {bucket} -p export/{type}' \
-            .format(type=export_type, bucket=output_bucket)
-        resources = {
-            'request_cpu': "100m",
-            'limit_cpu': '2',
-            'request_memory': "32Gi",
-            'limit_memory': '32Gi',
-        }
-        node_selector = 'highmem-node-pool'
+        year = '{{ execution_date.strftime("%Y") }}'
+        export_path.append('year={year}'.format(year=year))
+        extra_args = '-y {year}'.format(year=year)
+
+    cmd = 'export_to_gcs.sh -f {type} {extra_args} -o {bucket} -e {exclude} -p {path}' \
+        .format(type=export_type,
+                extra_args=extra_args,
+                bucket=output_bucket,
+                exclude=excluded_images,
+                path=os.path.join(*export_path))
 
     task_id = 'export-{export_type}'.format(export_type=export_type).replace('_', '-')
     data_dir = '/usr/share/gcs/data'
     export_operator = KubernetesPodOperator(
         task_id=task_id,
         name=task_id,
-        namespace='default',
-        image='gcr.io/gcp-pdp-weather-dev/geo-exporter:0.6.0',
+        namespace=namespace,
+        image="{name}:{version}".format(name=image_name, version=image_version),
         cmds=["/bin/bash", "-c", cmd],
         secrets=[secret_volume],
         startup_timeout_seconds=120,
@@ -96,7 +93,7 @@ def build_export_dag(
             'GOOGLE_APPLICATION_CREDENTIALS': '/var/secrets/google/service-account.json',
             'DATA_DIR': data_dir,
         },
-        image_pull_policy='Always',
+        image_pull_policy=image_pull_policy,
         resources=resources,
         is_delete_operator_pod=True,
         full_pod_spec=build_pod_spec(name=task_id, bucket=output_bucket, data_dir=data_dir),
@@ -115,7 +112,7 @@ def build_pod_spec(name, bucket, data_dir):
         name=name,
         lifecycle=k8s.V1Lifecycle(
             post_start=k8s.V1Handler(
-                _exec=k8s.V1ExecAction(command=["gcsfuse", bucket, data_dir])
+                _exec=k8s.V1ExecAction(command=["gcsfuse", "--log-file", "/var/log/gcs_fuse.log", "--temp-dir", "/tmp", "--debug_gcs", bucket, data_dir])
             ),
             pre_stop=k8s.V1Handler(
                 _exec=k8s.V1ExecAction(command=["fusermount", "-u", data_dir])

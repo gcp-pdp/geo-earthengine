@@ -15,12 +15,13 @@ RUN apk add --update --no-cache \
 
 COPY --from=builder /go/bin/gcsfuse /usr/local/bin
 
-COPY ./scripts /root/scripts
-
-RUN python3 -m pip install gdal numpy
+COPY requirements.txt /root
+RUN python3 -m pip install -r /root/requirements.txt
 
 RUN mkdir -p /usr/share/gcs/data
 
 ENV PATH $PATH:/root/scripts
+
+COPY ./scripts/export_to_gcs.sh ./scripts/geotif-to-bqcsv.py /root/scripts/
 
 WORKDIR /root/scripts

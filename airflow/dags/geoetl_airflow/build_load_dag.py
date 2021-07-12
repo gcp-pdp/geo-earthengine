@@ -27,6 +27,7 @@ def build_load_dag(
         load_end_date=None,
         load_schedule_interval='0 0 * * *',
         load_max_active_runs=None,
+        output_path_prefix='export',
 ):
     """Build Load DAG"""
 
@@ -67,7 +68,7 @@ def build_load_dag(
 
     dag = models.DAG(
         dag_id,
-        catchup=False if load_end_date is None else True,
+        catchup=False if load_start_date is None else True,
         schedule_interval=load_schedule_interval,
         max_active_runs=load_max_active_runs,
         default_args=default_dag_args)
@@ -76,11 +77,15 @@ def build_load_dag(
 
     def add_load_tasks(task):
         if task == 'gfs':
-            output_prefix = 'export/{task}/date={date}/csv/'.format(task=task, date='{{ds}}')
+            output_prefix = '{path_prefix}/{task}/date={date}/csv/'\
+                .format(path_prefix=output_path_prefix,
+                        task=task,
+                        date='{{ (execution_date - macros.timedelta(hours=9)).strftime("%Y-%m-%d") }}')
         elif task == 'world_pop':
-            output_prefix = 'export/{task}/year={year}/csv/'.format(task=task, year='{{execution_date.strftime("%Y")}}')
+            output_prefix = '{path_prefix}/{task}/year={year}/csv/'\
+                .format(path_prefix=output_path_prefix, task=task, year='{{execution_date.strftime("%Y")}}')
         elif task == 'annual_npp':
-            output_prefix = 'export/{task}/csv/'.format(task=task)
+            output_prefix = '{path_prefix}/{task}/csv/'.format(path_prefix=output_path_prefix, task=task)
 
         wait_sensor = GoogleCloudStoragePrefixSensor(
             task_id='wait_{task}'.format(task=task),
@@ -101,20 +106,23 @@ def build_load_dag(
             job_config.ignore_unknown_values = True
 
             if load_type == 'gfs':
-                uri = 'gs://{bucket}/export/{task}/date={date}/csv/*.csv'.format(
+                date = context['execution_date'] - timedelta(hours=9)
+                uri = 'gs://{bucket}/{path_prefix}/{task}/date={date}/csv/*.csv'.format(
                     bucket=output_bucket,
-                    date=context['execution_date'].strftime('%Y-%m-%d'),
+                    path_prefix=output_path_prefix,
+                    date=date.strftime('%Y-%m-%d'),
                     task=task)
                 table = '{table}${partition}'.format(
                     table=table_for_task[task],
-                    partition=context['execution_date'].strftime('%Y%m%d')
+                    partition=date.strftime('%Y%m%d')
                 )
                 job_config.time_partitioning = TimePartitioning(field='creation_time')
 
             elif load_type == 'world_pop':
                 year = context['execution_date'].strftime('%Y')
-                uri = 'gs://{bucket}/export/{task}/year={year}/csv/*.csv'.format(
+                uri = 'gs://{bucket}/{path_prefix}/{task}/year={year}/csv/*.csv'.format(
                     bucket=output_bucket,
+                    path_prefix=output_path_prefix,
                     year=year,
                     task=task)
                 table = '{table}${partition}'.format(
@@ -128,8 +136,9 @@ def build_load_dag(
 
             elif load_type == 'annual_npp':
                 year = context['execution_date'].strftime('%Y')
-                uri = 'gs://{bucket}/export/{task}/csv/{year}_*.csv'.format(
+                uri = 'gs://{bucket}/{path_prefix}/{task}/csv/{year}_*.csv'.format(
                     bucket=output_bucket,
+                    path_prefix=output_path_prefix,
                     year=year,
                     task=task)
                 table = '{table}${partition}'.format(
