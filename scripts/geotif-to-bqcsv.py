@@ -88,10 +88,10 @@ with open(outfile, 'w') as fd:
 
         geo_xs = gt[0] + (xs + 0.5) * gt[1] + (ys + 0.5) * gt[2]
         geo_ys = gt[3] + (xs + 0.5) * gt[4] + (ys + 0.5) * gt[5]
-        max_xs = (geo_xs + (0.5 * gt[1])).ravel().clip(-180, 180)
-        min_xs = (geo_xs - (0.5 * gt[1])).ravel().clip(-180, 180)
-        max_ys = (geo_ys + (0.5 * -gt[5])).ravel().clip(-90, 90)
-        min_ys = (geo_ys - (0.5 * -gt[5])).ravel().clip(-90, 90)
+        max_xs = (geo_xs + (0.5 * gt[1])).ravel().clip(-180, 180).round(8)
+        min_xs = (geo_xs - (0.5 * gt[1])).ravel().clip(-180, 180).round(8)
+        max_ys = (geo_ys + (0.5 * -gt[5])).ravel().clip(-90, 90).round(8)
+        min_ys = (geo_ys - (0.5 * -gt[5])).ravel().clip(-90, 90).round(8)
         boxes = zip(min_xs, min_ys, max_xs, max_ys)
 
         fd.write('\n'.join([fmt % (x, y, dumps(box(*p), trim=True), *mfld, *vals) for (x,y,p,vals) in zip(geo_xs.ravel(), geo_ys.ravel(), boxes, array)]) + '\n')
