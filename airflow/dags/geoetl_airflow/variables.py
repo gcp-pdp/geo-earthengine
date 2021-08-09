@@ -44,6 +44,7 @@ def read_load_dag_vars(var_prefix, **kwargs):
         'output_path_prefix': read_var('output_path_prefix', var_prefix, False, False, **kwargs),
         'destination_dataset_project_id': read_var('destination_dataset_project_id', var_prefix, True, False, **kwargs),
         'destination_dataset_name': read_var('destination_dataset_name', var_prefix, True, False, **kwargs),
+        'destination_table_name': read_var('destination_table_name', var_prefix, True, False, **kwargs),
         'notification_emails': read_var('notification_emails', None, False, False, **kwargs),
         'load_schedule_interval': read_var('load_schedule_interval', var_prefix, False, False, **kwargs),
         'load_max_active_runs': load_max_active_runs,

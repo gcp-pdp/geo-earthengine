@@ -14,6 +14,7 @@ DAG = build_load_dag(
     load_type='gfs',
     **read_load_dag_vars(
         var_prefix='gfs_',
+        destination_table_name='NOAA_GFS0P25',
         load_schedule_interval='30 12 * * *',
         load_start_date='2021-06-01',
         load_max_active_runs=1,

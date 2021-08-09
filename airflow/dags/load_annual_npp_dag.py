@@ -14,6 +14,7 @@ DAG = build_load_dag(
     load_type='annual_npp',
     **read_load_dag_vars(
         var_prefix='annual_npp_',
+        destination_table_name='annual_npp',
         load_schedule_interval=None,
         load_max_active_runs=1,
         load_start_date='2000-01-01'

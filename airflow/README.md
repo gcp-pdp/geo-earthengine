@@ -77,7 +77,7 @@ to configure email notifications.
 
 | Variable | Description |
 |---|---|
-| `output_bucket` | GCS bucket where exported files with blockchain data will be stored |
+| `output_bucket` | GCS bucket where exported files will be stored |
 | `export_start_date` | export start date, default: `2019-04-22` |
 | `export_end_date` | export end date, used for integration testing, default: None |
 | `export_schedule_interval` | export cron schedule, default: `0 1 * * *` |
@@ -92,6 +92,7 @@ to configure email notifications.
 | `export_max_active_runs` | max active DAG runs for export, default: `3` |
 | `destination_dataset_project_id` | The project id where destination BigQuery dataset is |
 | `destination_dataset_name` | The destination BigQuery dataset name |
+| `destination_table_name` | The destination BigQuery table name |
 | `load_schedule_interval` | load cron schedule, default: `0 2 * * *` |
 | `load_end_date` | load end date, used for integration testing, default: None |
   

@@ -14,6 +14,7 @@ DAG = build_load_dag(
     load_type='world_pop',
     **read_load_dag_vars(
         var_prefix='world_pop_',
+        destination_table_name='world_pop',
         load_schedule_interval=None,
         load_max_active_runs=1,
         load_start_date='2020-01-01'

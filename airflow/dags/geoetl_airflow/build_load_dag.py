@@ -22,6 +22,7 @@ def build_load_dag(
         output_bucket,
         destination_dataset_project_id,
         destination_dataset_name,
+        destination_table_name,
         notification_emails=None,
         load_start_date=datetime(2021, 5, 1),
         load_end_date=None,
@@ -31,19 +32,14 @@ def build_load_dag(
 ):
     """Build Load DAG"""
 
-    dataset_name_temp = f'{destination_dataset_name}_temp'
-    table_for_task = {
-        'gfs': 'NOAA_GFS0P25',
-        'world_pop': 'world_pop',
-        'annual_npp': 'annual_npp',
-    }
-
     if not output_bucket:
         raise ValueError('output_bucket is required')
     if not destination_dataset_project_id:
         raise ValueError('destination_dataset_project_id is required')
     if not destination_dataset_name:
         raise ValueError('destination_dataset_name is required')
+    if not destination_table_name:
+        raise ValueError('destination_table_name is required')
 
     default_dag_args = {
         'depends_on_past': False,
@@ -113,7 +109,7 @@ def build_load_dag(
                     date=date.strftime('%Y-%m-%d'),
                     task=task)
                 table = '{table}${partition}'.format(
-                    table=table_for_task[task],
+                    table=destination_table_name,
                     partition=date.strftime('%Y%m%d')
                 )
                 job_config.time_partitioning = TimePartitioning(field='creation_time')
@@ -126,13 +122,14 @@ def build_load_dag(
                     year=year,
                     task=task)
                 table = '{table}${partition}'.format(
-                    table=table_for_task[task],
+                    table=destination_table_name,
                     partition=year
                 )
                 job_config.range_partitioning = RangePartitioning(
                     field='year',
                     range_=PartitionRange(start=2000, end=3000, interval=1)
                 )
+                job_config.clustering_fields = ['geography', 'geography_polygon', 'country']
 
             elif load_type == 'annual_npp':
                 year = context['execution_date'].strftime('%Y')
@@ -142,7 +139,7 @@ def build_load_dag(
                     year=year,
                     task=task)
                 table = '{table}${partition}'.format(
-                    table=table_for_task[task],
+                    table=destination_table_name,
                     partition=year
                 )
                 job_config.range_partitioning = RangePartitioning(

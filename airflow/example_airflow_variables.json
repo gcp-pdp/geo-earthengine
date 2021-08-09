@@ -5,8 +5,8 @@
     "output_bucket": "gcp-pdp-weather-dev",
     "output_path_prefix": "export",
     "image_name": "gcr.io/gcp-pdp-weather-dev/geo-exporter",
-    "image_version": "0.6.0",
-    "image_pull_policy": "Always",
+    "image_version": "1.0.0-46",
+    "image_pull_policy": "IfNotPresent",
     "namespace": "default",
     "gfs_resources": {
         "request_cpu": "100m",
