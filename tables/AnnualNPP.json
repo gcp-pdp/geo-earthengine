@@ -6,6 +6,12 @@
         "description": "WGS84 Point Geometry"
     },
     {
+        "name": "geography_polygon",
+        "type": "GEOGRAPHY",
+        "mode": "REQUIRED",
+        "description": "WGS84 Polygon Geometry"
+    },
+    {
         "name": "year",
         "type": "INTEGER",
         "mode": "REQUIRED",
