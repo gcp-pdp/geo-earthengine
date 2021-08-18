@@ -6,6 +6,12 @@
         "description": "TODO"
     },
     {
+        "name": "geography_polygon",
+        "type": "GEOGRAPHY",
+        "mode": "REQUIRED",
+        "description": "WGS84 Polygon Geometry"
+    },
+    {
         "name": "creation_time",
         "type": "DATETIME",
         "mode": "REQUIRED",
