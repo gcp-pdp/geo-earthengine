@@ -45,6 +45,7 @@ EOF
 list_images() {
   case "${TASK}" in
     gfs)
+      echo "Exporting GFS date: $DATE"
       COLLECTION="projects/earthengine-public/assets/NOAA/GFS0P25"
       INTERVAL=384
       IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "startTime='$DATE' and endTime='$DATE' and forecast_hours=$INTERVAL" \
