@@ -5,7 +5,7 @@ import os
 from datetime import datetime, timedelta
 
 from airflow import models, configuration
-from airflow.contrib.sensors.gcs_sensor import GoogleCloudStoragePrefixSensor
+from airflow.contrib.sensors.gcs_sensor import GoogleCloudStoragePrefixSensor, GoogleCloudStorageObjectSensor
 from airflow.operators.python_operator import PythonOperator
 from google.cloud import bigquery
 from google.cloud.bigquery import TimePartitioning, RangePartitioning, PartitionRange
@@ -73,24 +73,41 @@ def build_load_dag(
 
     def add_load_tasks(task):
         if task == 'gfs':
-            output_prefix = '{path_prefix}/{task}/date={date}/csv/'\
+            output = '{path_prefix}/{task}/date={date}/csv/{file}'\
                 .format(path_prefix=output_path_prefix,
                         task=task,
-                        date='{{ (execution_date - macros.timedelta(hours=9)).strftime("%Y-%m-%d") }}')
+                        date='{{ execution_date.strftime("%Y-%m-%d") }}',
+                        file='{{ (execution_date - macros.timedelta(hours=4)).strftime("%Y%m%d%H") }}F384.csv')
+            wait_sensor = GoogleCloudStorageObjectSensor(
+                task_id='wait_{task}'.format(task=task),
+                timeout=60 * 60,
+                poke_interval=60,
+                bucket=output_bucket,
+                object=output,
+                dag=dag
+            )
         elif task == 'world_pop':
             output_prefix = '{path_prefix}/{task}/year={year}/csv/'\
                 .format(path_prefix=output_path_prefix, task=task, year='{{execution_date.strftime("%Y")}}')
+            wait_sensor = GoogleCloudStoragePrefixSensor(
+                task_id='wait_{task}'.format(task=task),
+                timeout=60 * 60,
+                poke_interval=60,
+                bucket=output_bucket,
+                prefix=output_prefix,
+                dag=dag
+            )
         elif task == 'annual_npp':
-            output_prefix = '{path_prefix}/{task}/csv/'.format(path_prefix=output_path_prefix, task=task)
+            output = '{path_prefix}/{task}/csv/{year}_*.csv'.format(path_prefix=output_path_prefix, task=task, year='{{execution_date.strftime("%Y")}}')
+            wait_sensor = GoogleCloudStorageObjectSensor(
+                task_id='wait_{task}'.format(task=task),
+                timeout=60 * 60,
+                poke_interval=60,
+                bucket=output_bucket,
+                object=output,
+                dag=dag
+            )
 
-        wait_sensor = GoogleCloudStoragePrefixSensor(
-            task_id='wait_{task}'.format(task=task),
-            timeout=60 * 60,
-            poke_interval=60,
-            bucket=output_bucket,
-            prefix=output_prefix,
-            dag=dag
-        )
 
         def load_task(**context):
             client = bigquery.Client()
@@ -102,16 +119,18 @@ def build_load_dag(
             job_config.ignore_unknown_values = True
 
             if load_type == 'gfs':
-                date = context['execution_date'] - timedelta(hours=9)
-                uri = 'gs://{bucket}/{path_prefix}/{task}/date={date}/csv/*.csv'.format(
+                date = context['execution_date'] - timedelta(hours=4)
+                uri = 'gs://{bucket}/{path_prefix}/{task}/date={date}/csv/{file}'.format(
                     bucket=output_bucket,
                     path_prefix=output_path_prefix,
                     date=date.strftime('%Y-%m-%d'),
+                    file='{time}F384.csv'.format(time=date.strftime("%Y%m%d%H")),
                     task=task)
                 table = '{table}${partition}'.format(
                     table=destination_table_name,
                     partition=date.strftime('%Y%m%d')
                 )
+                job_config.write_disposition = 'WRITE_APPEND'
                 job_config.time_partitioning = TimePartitioning(field='creation_time')
 
             elif load_type == 'world_pop':
@@ -147,7 +166,7 @@ def build_load_dag(
                     range_=PartitionRange(start=2000, end=3000, interval=1)
                 )
 
-            table_ref = create_dataset(client, destination_dataset_name).table(table)
+            table_ref = create_dataset(client, destination_dataset_name, project=destination_dataset_project_id).table(table)
             load_job = client.load_table_from_uri(uri, table_ref, job_config=job_config)
             submit_bigquery_job(load_job, job_config)
             assert load_job.state == 'DONE'

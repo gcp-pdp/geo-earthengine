@@ -64,9 +64,10 @@ def build_export_dag(
     export_path = [output_path_prefix, export_type]
 
     if export_type == 'gfs':
-        date = '{{ (execution_date - macros.timedelta(hours=9)).strftime("%Y-%m-%d") }}'
+        date = '{{ execution_date.strftime("%Y-%m-%d") }}'
+        date_time = '{{ (execution_date - macros.timedelta(hours=4)).strftime("%Y-%m-%dT%H:00:00") }}'
         export_path.append('date={date}'.format(date=date))
-        extra_args = '-d {date}'.format(date=date)
+        extra_args = '-d {date}'.format(date=date_time)
     elif export_type == 'world_pop':
         year = '{{ execution_date.strftime("%Y") }}'
         export_path.append('year={year}'.format(year=year))
