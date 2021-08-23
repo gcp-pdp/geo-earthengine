@@ -3,7 +3,7 @@
         "name": "geography",
         "type": "GEOGRAPHY",
         "mode": "REQUIRED",
-        "description": "TODO"
+        "description": "WGS84 Point Geometry"
     },
     {
         "name": "geography_polygon",
