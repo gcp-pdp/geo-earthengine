@@ -1,21 +1,9 @@
 [
     {
-        "name": "geography",
-        "type": "GEOGRAPHY",
-        "mode": "REQUIRED",
-        "description": "WGS84 Point Geometry"
-    },
-    {
-        "name": "geography_polygon",
-        "type": "GEOGRAPHY",
-        "mode": "REQUIRED",
-        "description": "WGS84 Polygon Geometry"
-    },
-    {
-        "name": "country",
+        "name": "country_code",
         "type": "STRING",
         "mode": "REQUIRED",
-        "description": "Country"
+        "description": "3-letter country code"
     },
     {
         "name": "year",
@@ -28,5 +16,17 @@
         "type": "FLOAT",
         "mode": "REQUIRED",
         "description": "Estimated number of people residing in each grid cell. Estimated range [0, 21171]"
+    },
+    {
+        "name": "geography",
+        "type": "GEOGRAPHY",
+        "mode": "REQUIRED",
+        "description": "WGS84 Point Geometry"
+    },
+    {
+        "name": "geography_polygon",
+        "type": "GEOGRAPHY",
+        "mode": "REQUIRED",
+        "description": "WGS84 Polygon Geometry"
     }
 ]
