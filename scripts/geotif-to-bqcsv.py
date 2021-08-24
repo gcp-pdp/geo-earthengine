@@ -51,10 +51,10 @@ for md in mds:
         mfld.append(mds[md])
         mtps.append(f'{md}:STRING')
     if '_time' in md:
-        dt = datetime.utcfromtimestamp(float(mds[md])/1000).strftime('%Y-%m-%d')
+        dt = datetime.utcfromtimestamp(float(mds[md])/1000).strftime('%Y-%m-%dT%H:%M:%S')
         mfmt.append('%s')
         mfld.append(dt)
-        mtps.append(f'{md}:DATE')
+        mtps.append(f'{md}:DATETIME')
     elif 'hours' in md or 'year' in md:
         mfmt.append('%d')
         mfld.append(int(mds[md]))

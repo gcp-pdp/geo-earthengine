@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-while getopts o:p:d:y:f:e: flag
+while getopts o:p:d:i:y:f:e: flag
 do
   case "${flag}" in
     o) BUCKET=${OPTARG};;
     p) PREFIX=${OPTARG};;
     d) DATE=${OPTARG};;
+    i) INTERVAL=${OPTARG};;
     y) YEAR=${OPTARG};;
     f) TASK=${OPTARG};;
     e) EXCLUDE=${OPTARG};;
@@ -46,7 +47,6 @@ list_images() {
   case "${TASK}" in
     gfs)
       COLLECTION="projects/earthengine-public/assets/NOAA/GFS0P25"
-      INTERVAL=384
       IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "startTime='$DATE' and endTime='$DATE' and forecast_hours=$INTERVAL" \
       | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
       ;;
