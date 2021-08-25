@@ -49,8 +49,8 @@ list_images() {
         COLLECTION="projects/earthengine-public/assets/NOAA/GFS0P25"
         IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "startTime='$DATE' and endTime='$DATE' and forecast_hours=$INTERVAL" \
         | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
-        ;;
       done
+      ;;
     world_pop)
       COLLECTION="projects/earthengine-public/assets/WorldPop/GP/100m/pop"
       IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "year=$YEAR" | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
