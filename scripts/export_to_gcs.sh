@@ -109,6 +109,10 @@ convert_tif_to_csv() {
 
 # main
 IMAGES=$(list_images)
+if [ -z "$IMAGES" ] ; then
+    echo "No GeoEarth image found"
+    exit 1
+fi
 
 for IMAGE in $IMAGES
 do
