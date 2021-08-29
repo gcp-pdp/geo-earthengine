@@ -10,13 +10,13 @@ logging.getLogger().setLevel(logging.DEBUG)
 
 # airflow DAG
 DAG = build_load_dag(
-    dag_id='load_gfs_dag',
-    load_type='gfs',
+    data_type="GFS",
+    dag_id="load_gfs_dag",
     **read_load_dag_vars(
-        var_prefix='gfs_',
-        destination_table_name='NOAA_GFS0P25',
-        load_schedule_interval='30 12 * * *',
-        load_start_date='2021-06-01',
+        group="gfs",
+        destination_table_name="NOAA_GFS0P25",
+        load_schedule_interval="30 12 * * *",
+        load_start_date="2021-06-01",
         load_max_active_runs=1,
     )
 )
