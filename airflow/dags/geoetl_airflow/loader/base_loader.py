@@ -10,7 +10,7 @@ from airflow.operators.python_operator import PythonOperator
 from google.cloud import bigquery
 from google.cloud.bigquery import TimePartitioning, RangePartitioning
 
-from geoetl_airflow.bigquery_utils import (
+from geoetl_airflow.utils.bigquery_utils import (
     read_bigquery_schema_from_file,
     create_dataset,
     submit_bigquery_job,
