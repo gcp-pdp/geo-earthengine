@@ -12,6 +12,8 @@ def read_export_dag_vars(group, **kwargs):
         "export_start_date": parse_date(vars.get("export_start_date")),
         "export_end_date": parse_date(vars.get("export_end_date")),
         "export_schedule_interval": vars.get("export_schedule_interval"),
+        "export_retries": parse_int(vars.get("export_retries")),
+        "export_retry_delay": parse_int(vars.get("export_retry_delay")),
         "output_path_prefix": vars.get("output_path_prefix"),
         "notification_emails": vars.get("notification_emails"),
         "image_name": vars.get("image_name"),
@@ -42,6 +44,8 @@ def read_load_dag_vars(group, **kwargs):
         "load_concurrency": parse_int(vars.get("load_concurrency")),
         "load_start_date": parse_date(vars.get("load_start_date")),
         "load_end_date": parse_date(vars.get("load_end_date")),
+        "load_retries": parse_int(vars.get("load_retries")),
+        "load_retry_delay": parse_int(vars.get("load_retry_delay")),
     }
 
 

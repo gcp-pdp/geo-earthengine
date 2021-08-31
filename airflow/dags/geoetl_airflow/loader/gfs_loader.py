@@ -48,15 +48,3 @@ class GFSLoader(BaseLoader):
 
     def target_date(self, execution_date):
         return execution_date - timedelta(hours=4)
-
-    def wait_sensor(self, dag, task_id, wait_uri, priority):
-        return GoogleCloudStorageObjectSensor(
-            task_id="wait_{task_id}".format(task_id=task_id),
-            task_concurrency=self.load_concurrency / 2,
-            timeout=60 * 60,
-            poke_interval=60,
-            bucket=self.output_bucket,
-            object=wait_uri,
-            priority_weight=priority,
-            dag=dag,
-        )

@@ -10,6 +10,10 @@
         "image_pull_policy": "IfNotPresent",
         "namespace": "default",
         "node_selector": "default-pool",
+        "export_retries": 5,
+        "export_retry_delay": 300,
+        "load_retries": 5,
+        "load_retry_delay": 300
     },
     "gfs": {
         "destination_table_name": "NOAA_GFS0P25",
@@ -21,6 +25,7 @@
         "load_start_date": "2021-08-25",
         "load_concurrency": 4,
         "load_max_active_runs": 1,
+        "export_retries": 10,
         "resources": {
             "request_cpu": "100m",
             "limit_cpu": "500m",

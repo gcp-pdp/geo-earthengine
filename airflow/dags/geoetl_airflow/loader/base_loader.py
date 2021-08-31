@@ -15,6 +15,7 @@ from geoetl_airflow.utils.bigquery_utils import (
     create_dataset,
     submit_bigquery_job,
 )
+from operators.gcs_sensor import GoogleCloudStorageObjectSensor
 
 
 class BaseLoader(ABC):
@@ -31,6 +32,8 @@ class BaseLoader(ABC):
         load_schedule_interval="0 0 * * *",
         load_max_active_runs=None,
         load_concurrency=None,
+        load_retries=5,
+        load_retry_delay=300,
         output_path_prefix="export",
         table_schema_name=None,
         table_clustering_fields=None,
@@ -48,6 +51,8 @@ class BaseLoader(ABC):
         self.load_schedule_interval = load_schedule_interval
         self.load_max_active_runs = load_max_active_runs
         self.load_concurrency = load_concurrency
+        self.load_retries = load_retries
+        self.load_retry_delay = load_retry_delay
         self.output_path_prefix = output_path_prefix
         self.table_schema_name = table_schema_name
         self.table_clustering_fields = table_clustering_fields
@@ -70,8 +75,8 @@ class BaseLoader(ABC):
             "end_date": self.load_end_date,
             "email_on_failure": True,
             "email_on_retry": False,
-            "retries": 5,
-            "retry_delay": timedelta(minutes=5),
+            "retries": self.load_retries,
+            "retry_delay": timedelta(seconds=self.load_retry_delay),
         }
 
         if self.notification_emails and len(self.notification_emails) > 0:
@@ -98,9 +103,30 @@ class BaseLoader(ABC):
     def add_load_tasks(self, dag):
         max_priority = 10000
         for i, (task_id, wait_uri, load_uri) in enumerate(self.tasks()):
-            wait_sensor = self.wait_sensor(
-                dag, task_id, wait_uri, max_priority - (i * 10)
-            )
+            wait_task_concurrency = self.load_concurrency / 2
+            wait_task_priority = max_priority - (i * 10)
+            if wait_uri.endswith("/"):
+                wait_sensor = GoogleCloudStoragePrefixSensor(
+                    task_id="wait_{task_id}".format(task_id=task_id),
+                    task_concurrency=wait_task_concurrency,
+                    timeout=60 * 60,
+                    poke_interval=60,
+                    bucket=self.output_bucket,
+                    prefix=wait_uri,
+                    priority_weight=wait_task_priority,
+                    dag=dag,
+                )
+            else:
+                wait_sensor = GoogleCloudStorageObjectSensor(
+                    task_id="wait_{task_id}".format(task_id=task_id),
+                    task_concurrency=wait_task_concurrency,
+                    timeout=60 * 60,
+                    poke_interval=60,
+                    bucket=self.output_bucket,
+                    object=wait_uri,
+                    priority_weight=wait_task_priority,
+                    dag=dag,
+                )
             load_operator = PythonOperator(
                 task_id="load_{task_id}".format(task_id=task_id),
                 weight_rule="upstream",
@@ -155,18 +181,6 @@ class BaseLoader(ABC):
         year = execution_date.strftime("%Y")
         return "{table}${partition}".format(
             table=self.destination_table_name, partition=year
-        )
-
-    def wait_sensor(self, dag, task_id, prefix, priority):
-        return GoogleCloudStoragePrefixSensor(
-            task_id="wait_{task_id}".format(task_id=task_id),
-            task_concurrency=self.load_concurrency / 2,
-            timeout=60 * 60,
-            poke_interval=60,
-            bucket=self.output_bucket,
-            prefix=prefix,
-            priority_weight=priority,
-            dag=dag,
         )
 
     @abstractmethod
