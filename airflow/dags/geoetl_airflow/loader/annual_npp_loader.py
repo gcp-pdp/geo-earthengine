@@ -15,7 +15,7 @@ class AnnualNPPLoader(BaseLoader):
             **kwargs
         )
 
-    def tasks(self):
+    def task_config(self):
         wait_uri = "{prefix}/annual_npp/csv/".format(
             prefix=self.output_path_prefix,
             year='{{execution_date.strftime("%Y")}}',
@@ -24,4 +24,4 @@ class AnnualNPPLoader(BaseLoader):
             bucket=self.output_bucket,
             prefix=self.output_path_prefix,
         )
-        yield "annual_npp", wait_uri, load_uri
+        return "annual_npp", wait_uri, load_uri

@@ -20,7 +20,7 @@ class WorldPopLoader(BaseLoader):
             **kwargs
         )
 
-    def tasks(self):
+    def task_config(self):
         wait_uri = "{prefix}/world_pop/year={year}/csv/".format(
             prefix=self.output_path_prefix,
             year='{{execution_date.strftime("%Y")}}',
@@ -29,4 +29,4 @@ class WorldPopLoader(BaseLoader):
             bucket=self.output_bucket,
             prefix=self.output_path_prefix,
         )
-        yield "world_pop", wait_uri, load_uri
+        return "world_pop", wait_uri, load_uri

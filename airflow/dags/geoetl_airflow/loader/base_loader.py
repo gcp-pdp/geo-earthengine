@@ -15,7 +15,6 @@ from geoetl_airflow.utils.bigquery_utils import (
     create_dataset,
     submit_bigquery_job,
 )
-from operators.gcs_sensor import GoogleCloudStorageObjectSensor
 
 
 class BaseLoader(ABC):
@@ -97,69 +96,36 @@ class BaseLoader(ABC):
             default_args=default_dag_args,
         )
 
-        load_tasks = self.add_load_tasks(dag)
+        load_task = self.add_load_tasks(dag)
         return dag
 
     def add_load_tasks(self, dag):
-        max_priority = 10000
-        for i, (task_id, wait_uri, load_uri) in enumerate(self.tasks()):
-            wait_task_concurrency = self.load_concurrency / 2
-            wait_task_priority = max_priority - (i * 10)
-            if wait_uri.endswith("/"):
-                wait_sensor = GoogleCloudStoragePrefixSensor(
-                    task_id="wait_{task_id}".format(task_id=task_id),
-                    task_concurrency=wait_task_concurrency,
-                    timeout=60 * 60,
-                    poke_interval=60,
-                    bucket=self.output_bucket,
-                    prefix=wait_uri,
-                    priority_weight=wait_task_priority,
-                    dag=dag,
-                )
-            else:
-                wait_sensor = GoogleCloudStorageObjectSensor(
-                    task_id="wait_{task_id}".format(task_id=task_id),
-                    task_concurrency=wait_task_concurrency,
-                    timeout=60 * 60,
-                    poke_interval=60,
-                    bucket=self.output_bucket,
-                    object=wait_uri,
-                    priority_weight=wait_task_priority,
-                    dag=dag,
-                )
-            load_operator = PythonOperator(
-                task_id="load_{task_id}".format(task_id=task_id),
-                weight_rule="upstream",
-                python_callable=self.load_task,
-                execution_timeout=timedelta(minutes=30),
-                op_kwargs={"uri": load_uri},
-                provide_context=True,
-                priority_weight=max_priority - (i * 10) + 1,
-                dag=dag,
-            )
-            wait_sensor >> load_operator
+        (task_id, wait_uri, load_uri) = self.task_config()
+        wait_sensor = GoogleCloudStoragePrefixSensor(
+            task_id="wait_{task_id}".format(task_id=task_id),
+            timeout=60 * 60,
+            poke_interval=60,
+            bucket=self.output_bucket,
+            prefix=wait_uri,
+            priority_weight=1,
+            dag=dag,
+        )
+        load_operator = PythonOperator(
+            task_id="load_{task_id}".format(task_id=task_id),
+            weight_rule="upstream",
+            python_callable=self.load_task,
+            execution_timeout=timedelta(minutes=30),
+            op_kwargs={"uri": load_uri},
+            provide_context=True,
+            priority_weight=2,
+            dag=dag,
+        )
+        wait_sensor >> load_operator
+        return load_operator
 
     def load_task(self, uri, **context):
-        dags_folder = os.environ.get("DAGS_FOLDER", "/home/airflow/gcs/dags")
-        schema_path = os.path.join(
-            dags_folder,
-            "resources/stages/load/schemas/{schema}.json".format(
-                schema=self.table_schema_name
-            ),
-        )
         client = bigquery.Client()
-        job_config = bigquery.LoadJobConfig()
-        job_config.schema = read_bigquery_schema_from_file(schema_path)
-        job_config.source_format = bigquery.SourceFormat.CSV
-        job_config.write_disposition = self.table_write_disposition
-        job_config.ignore_unknown_values = True
-        if self.table_clustering_fields is not None:
-            job_config.clustering_fields = self.table_clustering_fields
-        if type(self.table_partitioning) == TimePartitioning:
-            job_config.time_partitioning = self.table_partitioning
-        elif type(self.table_partitioning) == RangePartitioning:
-            job_config.range_partitioning = self.table_partitioning
-
+        job_config = self.create_job_config()
         table_ref = create_dataset(
             client,
             self.destination_dataset_name,
@@ -173,6 +139,28 @@ class BaseLoader(ABC):
         submit_bigquery_job(load_job, job_config)
         assert load_job.state == "DONE"
 
+    def create_job_config(self):
+        job_config = bigquery.LoadJobConfig()
+        job_config.schema = self.load_schema(self.table_schema_name)
+        job_config.source_format = bigquery.SourceFormat.CSV
+        job_config.write_disposition = self.table_write_disposition
+        job_config.ignore_unknown_values = True
+        if self.table_clustering_fields is not None:
+            job_config.clustering_fields = self.table_clustering_fields
+        if type(self.table_partitioning) == TimePartitioning:
+            job_config.time_partitioning = self.table_partitioning
+        elif type(self.table_partitioning) == RangePartitioning:
+            job_config.range_partitioning = self.table_partitioning
+        return job_config
+
+    def load_schema(self, schema_name):
+        dags_folder = os.environ.get("DAGS_FOLDER", "/home/airflow/gcs/dags")
+        schema_path = os.path.join(
+            dags_folder,
+            "resources/stages/load/schemas/{schema}.json".format(schema=schema_name),
+        )
+        return read_bigquery_schema_from_file(schema_path)
+
     def build_load_uri(self, uri, execution_date):
         year = execution_date.strftime("%Y")
         return uri.format(year=year)
@@ -184,5 +172,5 @@ class BaseLoader(ABC):
         )
 
     @abstractmethod
-    def tasks(self):
+    def task_config(self):
         pass
