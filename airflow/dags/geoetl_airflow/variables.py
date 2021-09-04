@@ -14,6 +14,10 @@ def read_export_dag_vars(group, **kwargs):
         "export_schedule_interval": vars.get("export_schedule_interval"),
         "export_retries": parse_int(vars.get("export_retries")),
         "export_retry_delay": parse_int(vars.get("export_retry_delay")),
+        "export_retry_exponential_backoff": parse_bool(
+            vars.get("export_retry_exponential_backoff")
+        ),
+        "export_max_retry_delay": parse_int(vars.get("export_max_retry_delay")),
         "output_path_prefix": vars.get("output_path_prefix"),
         "notification_emails": vars.get("notification_emails"),
         "image_name": vars.get("image_name"),

@@ -23,6 +23,8 @@ class BaseExporter(ABC):
         export_concurrency=None,
         export_retries=5,
         export_retry_delay=300,
+        export_retry_exponential_backoff=False,
+        export_max_retry_delay=300,
         image_name="gcr.io/gcp-pdp-weather-dev/geo-exporter",
         image_version="1.0.0",
         image_pull_policy="Always",
@@ -41,6 +43,8 @@ class BaseExporter(ABC):
         self.export_max_active_runs = export_max_active_runs
         self.export_retries = export_retries
         self.export_retry_delay = export_retry_delay
+        self.export_retry_exponential_backoff = export_retry_exponential_backoff
+        self.export_max_retry_delay = export_max_retry_delay
         self.image_name = image_name
         self.image_version = image_version
         self.image_pull_policy = image_pull_policy
@@ -60,6 +64,8 @@ class BaseExporter(ABC):
             "email_on_retry": True,
             "retries": self.export_retries,
             "retry_delay": timedelta(seconds=self.export_retry_delay),
+            "retry_exponential_backoff": self.export_retry_exponential_backoff,
+            "max_retry_delay": timedelta(seconds=self.export_max_retry_delay),
         }
 
         if self.notification_emails and len(self.notification_emails) > 0:
