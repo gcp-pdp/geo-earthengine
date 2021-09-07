@@ -35,7 +35,6 @@ class GFSLoader(BaseLoader):
             execution_timeout=timedelta(minutes=30),
             retries=3,
             retry_delay=timedelta(minutes=5),
-            priority_weight=max_priority,
             dag=dag,
         )
 
@@ -49,17 +48,18 @@ class GFSLoader(BaseLoader):
                 poke_interval=60,
                 bucket=self.output_bucket,
                 object=wait_uri,
+                weight_rule="upstream",
                 priority_weight=wait_task_priority,
                 dag=dag,
             )
             load_operator = PythonOperator(
                 task_id="load_{task_id}".format(task_id=task_id),
-                weight_rule="upstream",
                 python_callable=self.load_task,
                 execution_timeout=timedelta(minutes=30),
                 op_kwargs={"uri": load_uri},
                 provide_context=True,
-                priority_weight=max_priority - (i * 10) + 1,
+                weight_rule="upstream",
+                priority_weight=wait_task_priority,
                 dag=dag,
             )
             wait_sensor >> load_operator >> group_operator
