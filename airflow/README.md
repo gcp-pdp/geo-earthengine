@@ -78,9 +78,16 @@ to configure email notifications.
 | Variable | Description |
 |---|---|
 | `output_bucket` | GCS bucket where exported files will be stored |
-| `export_start_date` | export start date, default: `2019-04-22` |
-| `export_end_date` | export end date, used for integration testing, default: None |
-| `export_schedule_interval` | export cron schedule, default: `0 1 * * *` |
+| `output_path_prefix` | GCS path prefix where exported files will be stored, default: `export` |
+| `export_start_date` | export start date |
+| `export_end_date` | export end date |
+| `export_schedule_interval` | export cron schedule |
+| `export_retries` | number of retries for export task |
+| `export_retry_delay` | delay in seconds between each retries for export task |
+| `export_max_retry_delay` | maximum delay in seconds between each retry for export task |
+| `export_retry_exponential_backoff` | enable retry exponential backoff for export task, default: `true` |
+| `export_max_active_runs` | maximum active instance of export dag run |
+| `export_concurrency` | maximum active instance of export task |
 | `image_name` | exporter docker image name, default: `gcr.io/gcp-pdp-weather-dev/geo-exporter` |
 | `image_version` | exporter docker image version |
 | `image_pull_policy` | exporter docker image pull policy, default: `Always` |
@@ -89,12 +96,16 @@ to configure email notifications.
 | `node_selector` | node-pool label that exporter pod will be scheduled, default: `default-pool` |
 | `excluded_images` | comma separated list of images that will not be exported |
 | `notification_emails` | comma-separated list of emails where notifications on DAG failures, retries and successes will be delivered. |
-| `export_max_active_runs` | max active DAG runs for export, default: `3` |
-| `destination_dataset_project_id` | The project id where destination BigQuery dataset is |
-| `destination_dataset_name` | The destination BigQuery dataset name |
-| `destination_table_name` | The destination BigQuery table name |
-| `load_schedule_interval` | load cron schedule, default: `0 2 * * *` |
-| `load_end_date` | load end date, used for integration testing, default: None |
+| `export_max_active_runs` | max active DAG runs for export |
+| `destination_dataset_project_id` | the project id where destination BigQuery dataset is |
+| `destination_dataset_name` | the destination BigQuery dataset name |
+| `destination_table_name` | the destination BigQuery table name |
+| `load_schedule_interval` | load cron schedule |
+| `load_start_date` | load start date |
+| `load_end_date` | load end date |
+| `load_max_active_runs` | maximum active instance of load dag run |
+| `load_retries` | number of retries for load task |
+| `load_retry_delay` | delay in seconds between each retries for load task |
   
 ## Deploying Airflow DAGs
 
