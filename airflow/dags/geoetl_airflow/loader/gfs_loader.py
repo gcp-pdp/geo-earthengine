@@ -92,9 +92,12 @@ class GFSLoader(BaseLoader):
             project=self.destination_dataset_project_id,
         ).table(self.destination_table_name)
         if not does_table_exist(client, table_ref):
-            client.create_table(
-                bigquery.Table(table_ref, schema=self.load_schema("gfs_group"))
+            table = bigquery.Table(table_ref, schema=self.load_schema("gfs_group"))
+            table.time_partitioning = bigquery.TimePartitioning(
+                type_=bigquery.TimePartitioningType.MONTH, field="creation_time"
             )
+            table.clustering_fields = ["geography"]
+            client.create_table(table)
 
         job_config = bigquery.QueryJobConfig()
         job_config.priority = bigquery.QueryPriority.INTERACTIVE
