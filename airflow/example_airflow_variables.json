@@ -1,32 +1,66 @@
 {
-    "destination_dataset_project_id": "gcp-pdp-weather-dev",
-    "destination_dataset_name": "geo_weather_dev",
-    "export_max_active_runs": 3,
-    "output_bucket": "gcp-pdp-weather-dev",
-    "output_path_prefix": "export",
-    "image_name": "gcr.io/gcp-pdp-weather-dev/geo-exporter",
-    "image_version": "0.6.0",
-    "image_pull_policy": "Always",
-    "namespace": "default",
-    "gfs_resources": {
-        "request_cpu": "100m",
-        "limit_cpu": "500m",
-        "request_memory": "64Mi",
-        "limit_memory": "128Mi"
+    "base": {
+        "destination_dataset_project_id": "gcp-pdp-weather-dev",
+        "destination_dataset_name": "geo_weather_dev",
+        "export_max_active_runs": 3,
+        "output_bucket": "gcp-pdp-weather-dev",
+        "output_path_prefix": "export",
+        "image_name": "gcr.io/gcp-pdp-weather-dev/geo-exporter",
+        "image_version": "1.0.0-66",
+        "image_pull_policy": "IfNotPresent",
+        "namespace": "default",
+        "node_selector": "default-pool",
+        "export_retries": 5,
+        "export_retry_delay": 300,
+        "export_max_retry_delay": 300,
+        "export_retry_exponential_backoff": "false",
+        "export_concurrency": 2,
+        "load_retries": 5,
+        "load_retry_delay": 300,
+        "load_concurrency": 2
     },
-    "gfs_node_selector": "default-pool",
-    "world_pop_resources": {
-        "request_cpu": "100m",
-        "limit_cpu": "3",
-        "request_memory": "32Gi",
-        "limit_memory": "32Gi"
+    "gfs": {
+        "destination_table_name": "NOAA_GFS0P25",
+        "node_selector": "highmem-node-pool",
+        "export_concurrency": 20,
+        "export_max_active_runs": 2,
+        "export_schedule_interval": "0 4,10,16,22 * * *",
+        "export_start_date": "2021-08-25",
+        "export_retries": 20,
+        "export_retry_delay": 600,
+        "export_retry_exponential_backoff": "true",
+        "export_max_retry_delay": 3600,
+        "load_schedule_interval": "10 4,10,16,22 * * *",
+        "load_start_date": "2021-08-25",
+        "load_concurrency": 30,
+        "load_max_active_runs": 2,
+        "load_retries": 12,
+        "load_retry_delay": 600,
+        "resources": {
+            "request_cpu": "100m",
+            "limit_cpu": "500m",
+            "request_memory": "64Mi",
+            "limit_memory": "256Mi"
+        }
     },
-    "world_pop_node_selector": "highmem-node-pool",
-    "annual_npp_resources": {
-        "request_cpu": "100m",
-        "limit_cpu": "2",
-        "request_memory": "32Gi",
-        "limit_memory": "32Gi"
+    "annual_npp": {
+        "destination_table_name": "annual_npp",
+        "node_selector": "highmem-node-pool",
+        "resources": {
+            "request_cpu": "100m",
+            "limit_cpu": "2",
+            "request_memory": "32Gi",
+            "limit_memory": "32Gi"
+        }
     },
-    "annual_npp_node_selector": "highmem-node-pool"
+    "world_pop": {
+        "destination_table_name": "world_pop",
+        "node_selector": "highmem-node-pool",
+        "resources": {
+            "request_cpu": "100m",
+            "limit_cpu": "3",
+            "request_memory": "32Gi",
+            "limit_memory": "32Gi"
+        }
+    }
 }

@@ -12,6 +12,8 @@
 # https://cloud.google.com/bigquery/docs/gis-data#bq
 import os
 import sys
+from shapely.geometry import Polygon, box
+from shapely.wkt import dumps
 from osgeo import gdal, osr
 import numpy as np
 from datetime import datetime
@@ -49,17 +51,17 @@ for md in mds:
         mfld.append(mds[md])
         mtps.append(f'{md}:STRING')
     if '_time' in md:
-        dt = datetime.utcfromtimestamp(float(mds[md])/1000).strftime('%Y-%m-%d')
+        dt = datetime.utcfromtimestamp(float(mds[md])/1000).strftime('%Y-%m-%dT%H:%M:%S')
         mfmt.append('%s')
         mfld.append(dt)
-        mtps.append(f'{md}:DATE')
+        mtps.append(f'{md}:DATETIME')
     elif 'hours' in md or 'year' in md:
         mfmt.append('%d')
         mfld.append(int(mds[md]))
         mtps.append(f'{md}:INTEGER')
 
-fmt =  '"POINT(%.10g %.10g)"' + ','.join(mfmt) + ',' + ((fmt + ',') * ds.RasterCount).rstrip(',')
-print (','.join(['geography:GEOGRAPHY']+mtps+[f'{ds.GetRasterBand(iband+1).GetDescription()}:{outtype}' for iband in range(ds.RasterCount)]))
+fmt =  '"POINT(%.10g %.10g)"' + ',"%s"' + ','.join(mfmt) + ',' + ((fmt + ',') * ds.RasterCount).rstrip(',')
+print (','.join(['geography:GEOGRAPHY', 'geography_polygon:GEOGRAPHY']+mtps+[f'{ds.GetRasterBand(iband+1).GetDescription()}:{outtype}' for iband in range(ds.RasterCount)]))
 
 # process the file only when the output file specified
 if len(sys.argv) <= 2:
@@ -86,5 +88,10 @@ with open(outfile, 'w') as fd:
 
         geo_xs = gt[0] + (xs + 0.5) * gt[1] + (ys + 0.5) * gt[2]
         geo_ys = gt[3] + (xs + 0.5) * gt[4] + (ys + 0.5) * gt[5]
+        max_xs = (geo_xs + (0.5 * gt[1])).ravel().clip(-180, 180).round(8)
+        min_xs = (geo_xs - (0.5 * gt[1])).ravel().clip(-180, 180).round(8)
+        max_ys = (geo_ys + (0.5 * -gt[5])).ravel().clip(-90, 90).round(8)
+        min_ys = (geo_ys - (0.5 * -gt[5])).ravel().clip(-90, 90).round(8)
+        boxes = zip(min_xs, min_ys, max_xs, max_ys)
 
-        fd.write('\n'.join([fmt % (x, y, *mfld, *vals) for (x,y,vals) in zip(geo_xs.ravel(), geo_ys.ravel(), array)]) + '\n')
+        fd.write('\n'.join([fmt % (x, y, dumps(box(*p), trim=True), *mfld, *vals) for (x,y,p,vals) in zip(geo_xs.ravel(), geo_ys.ravel(), boxes, array)]) + '\n')

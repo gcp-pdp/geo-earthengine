@@ -10,12 +10,13 @@ logging.getLogger().setLevel(logging.DEBUG)
 
 # airflow DAG
 DAG = build_load_dag(
-    dag_id='load_annual_npp_dag',
-    load_type='annual_npp',
+    data_type="ANNUAL_NPP",
+    dag_id="load_annual_npp_dag",
     **read_load_dag_vars(
-        var_prefix='annual_npp_',
+        group="annual_npp",
+        destination_table_name="annual_npp",
         load_schedule_interval=None,
         load_max_active_runs=1,
-        load_start_date='2000-01-01'
+        load_start_date="2000-01-01",
     )
 )

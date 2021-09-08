@@ -10,12 +10,13 @@ logging.getLogger().setLevel(logging.DEBUG)
 
 # airflow DAG
 DAG = build_load_dag(
-    dag_id='load_world_pop_dag',
-    load_type='world_pop',
+    data_type="WORLD_POP",
+    dag_id="load_world_pop_dag",
     **read_load_dag_vars(
-        var_prefix='world_pop_',
+        group="world_pop",
+        destination_table_name="world_pop",
         load_schedule_interval=None,
         load_max_active_runs=1,
-        load_start_date='2020-01-01'
+        load_start_date="2020-01-01",
     )
 )

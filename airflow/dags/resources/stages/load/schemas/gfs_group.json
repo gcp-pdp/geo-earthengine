@@ -1,0 +1,91 @@
+[
+    {
+        "name": "creation_time",
+        "type": "DATETIME",
+        "mode": "REQUIRED",
+        "description": "Creation time of the forecast"
+    },
+    {
+        "name": "geography",
+        "type": "GEOGRAPHY",
+        "mode": "REQUIRED",
+        "description": "WGS84 Point Geometry"
+    },
+    {
+        "name": "geography_polygon",
+        "type": "GEOGRAPHY",
+        "mode": "REQUIRED",
+        "description": "WGS84 Polygon Geometry"
+    },
+    {
+        "name": "forecast",
+        "type": "RECORD",
+        "mode": "REPEATED",
+        "fields": [
+            {
+                "name": "hours",
+                "type": "INTEGER",
+                "mode": "REQUIRED"
+            },
+            {
+                "name": "time",
+                "type": "DATETIME",
+                "mode": "REQUIRED"
+            },
+            {
+                "name": "temperature_2m_above_ground",
+                "type": "FLOAT",
+                "mode": "REQUIRED",
+                "description": "Temperature 2m above ground. C"
+            },
+            {
+                "name": "specific_humidity_2m_above_ground",
+                "type": "FLOAT",
+                "mode": "REQUIRED",
+                "description": "Specific humidity 2m above ground. kg/kg"
+            },
+            {
+                "name": "relative_humidity_2m_above_ground",
+                "type": "FLOAT",
+                "mode": "REQUIRED",
+                "description": "Relative humidity 2m above ground. %"
+            },
+            {
+                "name": "u_component_of_wind_10m_above_ground",
+                "type": "FLOAT",
+                "mode": "REQUIRED",
+                "description": "U component of wind 10m above ground. m/s"
+            },
+            {
+                "name": "v_component_of_wind_10m_above_ground",
+                "type": "FLOAT",
+                "mode": "REQUIRED",
+                "description": "V component of wind 10m above ground. m/s"
+            },
+            {
+                "name": "total_precipitation_surface",
+                "type": "FLOAT",
+                "mode": "REQUIRED",
+                "description": "Until 2019-11-07 06:00:00, this field represents the precipitation at surface at the forecasted time. After that date, this field holds the cumulative precipitation at surface added together from all forecasts starting from hour 0 (only for assets with forecast_hours > 0). kg/m^2"
+            },
+            {
+                "name": "precipitable_water_entire_atmosphere",
+                "type": "FLOAT",
+                "mode": "REQUIRED",
+                "description": "Precipitable water for entire atmosphere. kg/m^2"
+            },
+            {
+                "name": "total_cloud_cover_entire_atmosphere",
+                "type": "FLOAT",
+                "mode": "REQUIRED",
+                "description": "Total cloud cover for entire atmosphere (only for assets with forecast_hours > 0). %"
+            },
+            {
+                "name": "downward_shortwave_radiation_flux",
+                "type": "FLOAT",
+                "mode": "REQUIRED",
+                "description": "Downward shortwave radiation flux (only for assets with forecast_hours > 0). W/m^2"
+            }
+        ]
+    }
+]

@@ -3,25 +3,31 @@
         "name": "geography",
         "type": "GEOGRAPHY",
         "mode": "REQUIRED",
-        "description": "TODO"
+        "description": "WGS84 Point Geometry"
+    },
+    {
+        "name": "geography_polygon",
+        "type": "GEOGRAPHY",
+        "mode": "REQUIRED",
+        "description": "WGS84 Polygon Geometry"
     },
     {
         "name": "creation_time",
         "type": "DATETIME",
         "mode": "REQUIRED",
-        "description": "TODO"
+        "description": "Creation time of the forecast"
     },
     {
         "name": "forecast_hours",
         "type": "INTEGER",
         "mode": "REQUIRED",
-        "description": "TODO"
+        "description": "Forecast offset, in hours, from the forecast creation_time"
     },
     {
         "name": "forecast_time",
-        "type": "DATE",
+        "type": "DATETIME",
         "mode": "REQUIRED",
-        "description": "TODO"
+        "description": "Forecast time. Equal to creation_time + forecast_hours"
     },
     {
         "name": "temperature_2m_above_ground",
