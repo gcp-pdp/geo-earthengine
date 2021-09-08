@@ -54,7 +54,7 @@ SELECT
       precipitable_water_entire_atmosphere,
       total_cloud_cover_entire_atmosphere,
       downward_shortwave_radiation_flux
-      ) ) AS forecast
+      ) ORDER BY forecast_hours ASC) AS forecast
 FROM
     `temp_gfs`
 GROUP BY
