@@ -6,7 +6,7 @@ do
     o) BUCKET=${OPTARG};;
     p) PREFIX=${OPTARG};;
     d) DATE=${OPTARG};;
-    i) INTERVAL=${OPTARG};;
+    i) HOURS=${OPTARG};;
     y) YEAR=${OPTARG};;
     f) TASK=${OPTARG};;
     e) EXCLUDE=${OPTARG};;
@@ -20,6 +20,14 @@ fi
 if [ -z "$DATA_DIR" ] ; then
     DATA_DIR=$(pwd)
 fi
+
+echo "BUCKET=${BUCKET}"
+echo "PREFIX=${PREFIX}"
+echo "DATE=${DATE}"
+echo "HOURS=${HOURS}"
+echo "YEAR=${YEAR}"
+echo "TASK=${TASK}"
+echo "EXCLUDE=${EXCLUDE}"
 
 cat << EOF >> modis.prj
 PROJCS["MODIS Sinusoidal",
@@ -46,8 +54,10 @@ EOF
 list_images() {
   case "${TASK}" in
     gfs)
+      CREATION_TIME=$(date -u -d"${DATE}" +%s%3N)
+      FORECAST_TIME=$(($CREATION_TIME + $HOURS * 3600000))
       COLLECTION="projects/earthengine-public/assets/NOAA/GFS0P25"
-      IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "startTime='$DATE' and endTime='$DATE' and forecast_hours=$INTERVAL" \
+      IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "startTime='$DATE' and endTime='$DATE' and (forecast_hours=$HOURS or forecast_time=$FORECAST_TIME)" \
       | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
       ;;
     world_pop)
