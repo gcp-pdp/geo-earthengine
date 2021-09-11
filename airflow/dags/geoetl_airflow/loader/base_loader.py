@@ -38,6 +38,7 @@ class BaseLoader(ABC):
         table_clustering_fields=None,
         table_partitioning=None,
         table_write_disposition="WRITE_TRUNCATE",
+        **kwargs
     ):
         self.dag_id = dag_id
         self.output_bucket = output_bucket
@@ -76,6 +77,7 @@ class BaseLoader(ABC):
             "email_on_retry": False,
             "retries": self.load_retries,
             "retry_delay": timedelta(seconds=self.load_retry_delay),
+            "is_paused_upon_creation": True,
         }
 
         if self.notification_emails and len(self.notification_emails) > 0:
@@ -94,6 +96,7 @@ class BaseLoader(ABC):
             max_active_runs=self.load_max_active_runs,
             concurrency=self.load_concurrency,
             default_args=default_dag_args,
+            is_paused_upon_creation=True,
         )
 
         load_task = self.add_load_tasks(dag)

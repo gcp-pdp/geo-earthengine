@@ -84,6 +84,7 @@ class BaseExporter(ABC):
             default_args=default_dag_args,
             max_active_runs=self.export_max_active_runs,
             concurrency=self.export_concurrency,
+            is_paused_upon_creation=True,
         )
 
         secret_volume = Secret(

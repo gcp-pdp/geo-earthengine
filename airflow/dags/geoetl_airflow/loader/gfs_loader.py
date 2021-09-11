@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 
 from airflow.contrib.sensors.gcs_sensor import GoogleCloudStorageObjectSensor
@@ -17,14 +18,18 @@ from geoetl_airflow.utils.file_utils import read_file
 
 
 class GFSLoader(BaseLoader):
-    def __init__(self, **kwargs):
+    def __init__(
+        self, forecast_hours, temp_dataset_project_id, temp_dataset_name, **kwargs
+    ):
         super(GFSLoader, self).__init__(
             table_schema_name="gfs",
             table_write_disposition="WRITE_APPEND",
             table_partitioning=TimePartitioning(field="creation_time"),
             **kwargs,
         )
-        self.temp_dataset_name = f"{self.destination_dataset_name}_temp"
+        self.temp_dataset_project_id = temp_dataset_project_id
+        self.temp_dataset_name = temp_dataset_name
+        self.forecast_hours = forecast_hours
 
     def add_load_tasks(self, dag):
         max_priority = 10000
@@ -33,8 +38,9 @@ class GFSLoader(BaseLoader):
             python_callable=self.group_task,
             provide_context=True,
             execution_timeout=timedelta(minutes=30),
-            retries=3,
+            retries=0,
             retry_delay=timedelta(minutes=5),
+            trigger_rule="all_done",
             dag=dag,
         )
 
@@ -60,6 +66,7 @@ class GFSLoader(BaseLoader):
                 provide_context=True,
                 weight_rule="upstream",
                 priority_weight=wait_task_priority,
+                retries=0,
                 dag=dag,
             )
             wait_sensor >> load_operator >> group_operator
@@ -72,7 +79,7 @@ class GFSLoader(BaseLoader):
         table_ref = create_dataset(
             client,
             self.temp_dataset_name,
-            project=self.destination_dataset_project_id,
+            project=self.temp_dataset_project_id,
         ).table(self.temp_table(context["execution_date"]))
         load_job = client.load_table_from_uri(
             self.build_load_uri(uri, context["execution_date"]),
@@ -105,12 +112,23 @@ class GFSLoader(BaseLoader):
         sql_path = os.path.join(dags_folder, "resources/stages/load/sqls/group_gfs.sql")
         sql_template = read_file(sql_path)
 
+        creation_time = self.target_date(context["execution_date"]).strftime(
+            "%Y-%m-%dT%H:00:00"
+        )
+        logging.info(
+            "Writing to table {table} and creation_time: {creation_time}".format(
+                table=self.destination_table_name, creation_time=creation_time
+            )
+        )
+
         template_context = {
-            "table": self.destination_table_name,
-            "table_temp": self.temp_table(context["execution_date"]),
-            "project_id": self.destination_dataset_project_id,
-            "dataset": self.destination_dataset_name,
-            "dataset_temp": self.temp_dataset_name,
+            "creation_time": creation_time,
+            "source_project_id": self.temp_dataset_project_id,
+            "source_dataset": self.temp_dataset_name,
+            "source_table": self.temp_table(context["execution_date"]),
+            "destination_table": self.destination_table_name,
+            "destination_project_id": self.destination_dataset_project_id,
+            "destination_dataset": self.destination_dataset_name,
         }
 
         sql = context["task"].render_template(sql_template, template_context)
@@ -119,7 +137,7 @@ class GFSLoader(BaseLoader):
         assert job.state == "DONE"
 
     def task_config(self):
-        for i in list(range(1, 121)) + list(range(123, 385, 3)):
+        for i in self.forecast_hours:
             wait_uri = "{prefix}/gfs/date={date}/csv/{file}".format(
                 prefix=self.output_path_prefix,
                 date='{{ execution_date.strftime("%Y-%m-%d") }}',

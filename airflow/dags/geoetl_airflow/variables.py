@@ -9,8 +9,8 @@ def read_export_dag_vars(group, **kwargs):
     vars = read_vars(group, **kwargs)
     return {
         "output_bucket": vars.get("output_bucket"),
-        "export_start_date": parse_date(vars.get("export_start_date")),
-        "export_end_date": parse_date(vars.get("export_end_date")),
+        "export_start_date": parse_datetime(vars.get("export_start_date")),
+        "export_end_date": parse_datetime(vars.get("export_end_date")),
         "export_schedule_interval": vars.get("export_schedule_interval"),
         "export_retries": parse_int(vars.get("export_retries")),
         "export_retry_delay": parse_int(vars.get("export_retry_delay")),
@@ -42,12 +42,14 @@ def read_load_dag_vars(group, **kwargs):
         "destination_dataset_project_id": vars.get("destination_dataset_project_id"),
         "destination_dataset_name": vars.get("destination_dataset_name"),
         "destination_table_name": vars.get("destination_table_name"),
+        "temp_dataset_project_id": vars.get("temp_dataset_project_id"),
+        "temp_dataset_name": vars.get("temp_dataset_name"),
         "notification_emails": vars.get("notification_emails"),
         "load_schedule_interval": vars.get("load_schedule_interval"),
         "load_max_active_runs": parse_int(vars.get("load_max_active_runs")),
         "load_concurrency": parse_int(vars.get("load_concurrency")),
-        "load_start_date": parse_date(vars.get("load_start_date")),
-        "load_end_date": parse_date(vars.get("load_end_date")),
+        "load_start_date": parse_datetime(vars.get("load_start_date")),
+        "load_end_date": parse_datetime(vars.get("load_end_date")),
         "load_retries": parse_int(vars.get("load_retries")),
         "load_retry_delay": parse_int(vars.get("load_retry_delay")),
     }
@@ -91,6 +93,14 @@ def parse_date(date_string, default=None):
     return (
         datetime.strptime(date_string, "%Y-%m-%d")
         if date_string is not None
+        else default
+    )
+
+
+def parse_datetime(datetime_string, default=None):
+    return (
+        datetime.strptime(datetime_string, "%Y-%m-%dT%H:%M:%S")
+        if datetime_string is not None
         else default
     )
 

@@ -9,7 +9,7 @@ DAG = build_export_dag(
     **read_export_dag_vars(
         group="world_pop",
         export_schedule_interval=None,
-        export_start_date="2020-01-01",
+        export_start_date="2020-01-01T00:00:00",
         export_max_active_runs=1,
     )
 )
