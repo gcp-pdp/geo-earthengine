@@ -6,7 +6,7 @@ from geoetl_airflow.loader.base_loader import BaseLoader
 class WorldPopLoader(BaseLoader):
     def __init__(self, **kwargs):
         super(WorldPopLoader, self).__init__(
-            table_schema_name="world_pop",
+            load_type="world_pop",
             table_write_disposition="WRITE_TRUNCATE",
             table_clustering_fields=[
                 "geography",
@@ -20,13 +20,19 @@ class WorldPopLoader(BaseLoader):
             **kwargs
         )
 
-    def task_config(self):
-        wait_uri = "{prefix}/world_pop/year={year}/csv/".format(
+    def build_wait_uri(self):
+        return "{prefix}/world_pop/year={year}/csv/".format(
             prefix=self.output_path_prefix,
             year='{{execution_date.strftime("%Y")}}',
         )
-        load_uri = "gs://{bucket}/{prefix}/world_pop/year={{year}}/csv/*.csv".format(
-            bucket=self.output_bucket,
-            prefix=self.output_path_prefix,
+
+    def build_load_uri(self, execution_date):
+        year = execution_date.strftime("%Y")
+        return "gs://{bucket}/{prefix}/world_pop/year={year}/csv/*.csv".format(
+            bucket=self.output_bucket, prefix=self.output_path_prefix, year=year
         )
-        return "world_pop", wait_uri, load_uri
+
+    def load_table_name(self, execution_date):
+        return "{table}${partition}".format(
+            table=self.destination_table_name, partition=execution_date.strftime("%Y")
+        )

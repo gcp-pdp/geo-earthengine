@@ -1,7 +1,7 @@
 import logging
+import os
 from datetime import timedelta
 
-from airflow.contrib.sensors.gcs_sensor import GoogleCloudStorageObjectSensor
 from airflow.operators.python_operator import PythonOperator
 from google.cloud import bigquery
 from google.cloud.bigquery import TimePartitioning
@@ -12,82 +12,36 @@ from geoetl_airflow.utils.bigquery_utils import (
     submit_bigquery_job,
     does_table_exist,
 )
-import os
-
 from geoetl_airflow.utils.file_utils import read_file
 
 
 class GFSLoader(BaseLoader):
-    def __init__(
-        self, forecast_hours, temp_dataset_project_id, temp_dataset_name, **kwargs
-    ):
+    def __init__(self, **kwargs):
         super(GFSLoader, self).__init__(
-            table_schema_name="gfs",
-            table_write_disposition="WRITE_APPEND",
+            load_type="gfs",
+            table_write_disposition="WRITE_TRUNCATE",
             table_partitioning=TimePartitioning(field="creation_time"),
             **kwargs,
         )
-        self.temp_dataset_project_id = temp_dataset_project_id
-        self.temp_dataset_name = temp_dataset_name
-        self.forecast_hours = forecast_hours
 
-    def add_load_tasks(self, dag):
-        max_priority = 10000
+    def add_aggregate_task(self, dag, upstream_task):
         group_operator = PythonOperator(
-            task_id="group_gfs",
+            task_id="group_by_time_geography",
             python_callable=self.group_task,
             provide_context=True,
-            execution_timeout=timedelta(minutes=30),
-            retries=0,
-            retry_delay=timedelta(minutes=5),
-            trigger_rule="all_done",
+            execution_timeout=timedelta(minutes=60),
+            retries=1,
+            retry_delay=timedelta(seconds=300),
             dag=dag,
         )
 
-        for i, (task_id, wait_uri, load_uri) in enumerate(self.task_config()):
-            wait_task_concurrency = self.load_concurrency / 2
-            wait_task_priority = max_priority - (i * 10)
-            wait_sensor = GoogleCloudStorageObjectSensor(
-                task_id="wait_{task_id}".format(task_id=task_id),
-                task_concurrency=wait_task_concurrency,
-                timeout=60 * 60,
-                poke_interval=60,
-                bucket=self.output_bucket,
-                object=wait_uri,
-                weight_rule="upstream",
-                priority_weight=wait_task_priority,
-                dag=dag,
-            )
-            load_operator = PythonOperator(
-                task_id="load_{task_id}".format(task_id=task_id),
-                python_callable=self.load_task,
-                execution_timeout=timedelta(minutes=30),
-                op_kwargs={"uri": load_uri},
-                provide_context=True,
-                weight_rule="upstream",
-                priority_weight=wait_task_priority,
-                retries=0,
-                dag=dag,
-            )
-            wait_sensor >> load_operator >> group_operator
+        return upstream_task >> group_operator
 
-        return group_operator
-
-    def load_task(self, uri, **context):
-        client = bigquery.Client()
-        job_config = self.create_job_config()
-        table_ref = create_dataset(
-            client,
-            self.temp_dataset_name,
-            project=self.temp_dataset_project_id,
-        ).table(self.temp_table(context["execution_date"]))
-        load_job = client.load_table_from_uri(
-            self.build_load_uri(uri, context["execution_date"]),
-            table_ref,
-            job_config=job_config,
+    def load_table_name(self, execution_date):
+        return "{table}_{suffix}".format(
+            table=self.destination_table_name,
+            suffix=self.target_date(execution_date).strftime("%Y%m%d%H"),
         )
-        submit_bigquery_job(load_job, job_config)
-        assert load_job.state == "DONE"
 
     def group_task(self, **context):
         client = bigquery.Client()
@@ -99,7 +53,7 @@ class GFSLoader(BaseLoader):
             project=self.destination_dataset_project_id,
         ).table(self.destination_table_name)
         if not does_table_exist(client, table_ref):
-            table = bigquery.Table(table_ref, schema=self.load_schema("gfs_group"))
+            table = bigquery.Table(table_ref, schema=self.read_schema("gfs_group"))
             table.time_partitioning = bigquery.TimePartitioning(
                 type_=bigquery.TimePartitioningType.MONTH, field="creation_time"
             )
@@ -123,9 +77,9 @@ class GFSLoader(BaseLoader):
 
         template_context = {
             "creation_time": creation_time,
-            "source_project_id": self.temp_dataset_project_id,
-            "source_dataset": self.temp_dataset_name,
-            "source_table": self.temp_table(context["execution_date"]),
+            "source_project_id": self.load_dataset_project_id,
+            "source_dataset": self.load_dataset_name,
+            "source_table": self.load_table_name(context["execution_date"]),
             "destination_table": self.destination_table_name,
             "destination_project_id": self.destination_dataset_project_id,
             "destination_dataset": self.destination_dataset_name,
@@ -136,36 +90,23 @@ class GFSLoader(BaseLoader):
         submit_bigquery_job(job, job_config)
         assert job.state == "DONE"
 
-    def task_config(self):
-        for i in self.forecast_hours:
-            wait_uri = "{prefix}/gfs/date={date}/csv/{file}".format(
+    def build_wait_uri(self):
+        return "{prefix}/gfs/date={date}/{hour}/csv/".format(
+            prefix=self.output_path_prefix,
+            hour='{{ (execution_date - macros.timedelta(hours=4)).strftime("%H") }}',
+            date='{{ execution_date.strftime("%Y-%m-%d") }}',
+        )
+
+    def build_load_uri(self, execution_date):
+        return (
+            "gs://{bucket}/{prefix}/gfs/date={execution_date}/{hour}/csv/*.csv".format(
+                bucket=self.output_bucket,
                 prefix=self.output_path_prefix,
-                date='{{ execution_date.strftime("%Y-%m-%d") }}',
-                file='{{ (execution_date - macros.timedelta(hours=4)).strftime("%Y%m%d%H") }}F'
-                + str(i).zfill(3)
-                + ".csv",
+                hour=self.target_date(execution_date).strftime("%H"),
+                execution_date=self.target_date(execution_date).strftime("%Y-%m-%d"),
             )
-            load_uri = (
-                "gs://{bucket}/{prefix}/gfs/date={{execution_date}}/csv/{file}".format(
-                    bucket=self.output_bucket,
-                    prefix=self.output_path_prefix,
-                    file="{{execution_time}}F{interval:03d}.csv".format(interval=i),
-                )
-            )
-            yield ("gfs_{interval}".format(interval=i), wait_uri, load_uri)
-
-    def build_load_uri(self, uri, execution_date):
-        date = self.target_date(execution_date)
-        return uri.format(
-            execution_date=date.strftime("%Y-%m-%d"),
-            execution_time=date.strftime("%Y%m%d%H"),
         )
 
-    def temp_table(self, execution_date):
-        date = self.target_date(execution_date)
-        return "{table}_{date}".format(
-            table=self.destination_table_name, date=date.strftime("%Y%m%d%H")
-        )
-
-    def target_date(self, execution_date):
+    @staticmethod
+    def target_date(execution_date):
         return execution_date - timedelta(hours=4)

@@ -88,6 +88,8 @@ to configure email notifications.
 | `export_retry_exponential_backoff` | enable retry exponential backoff for export task, default: `true` |
 | `export_max_active_runs` | maximum active instance of export dag run |
 | `export_concurrency` | maximum active instance of export task |
+| `export_parallel_jobs` | number of concurrent processes for an instance of exporter |
+| `export_overwrite` | whether to overwrite existing exported files |
 | `image_name` | exporter docker image name, default: `gcr.io/gcp-pdp-weather-dev/geo-exporter` |
 | `image_version` | exporter docker image version |
 | `image_pull_policy` | exporter docker image pull policy, default: `Always` |

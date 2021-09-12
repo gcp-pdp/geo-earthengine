@@ -14,6 +14,7 @@ class BaseExporter(ABC):
     def __init__(
         self,
         dag_id,
+        export_type,
         output_bucket,
         export_start_date,
         export_end_date=None,
@@ -21,10 +22,12 @@ class BaseExporter(ABC):
         export_schedule_interval="0 0 * * *",
         export_max_active_runs=None,
         export_concurrency=None,
+        export_parallel_jobs=1,
         export_retries=5,
         export_retry_delay=300,
         export_retry_exponential_backoff=False,
         export_max_retry_delay=300,
+        export_overwrite=False,
         image_name="gcr.io/gcp-pdp-weather-dev/geo-exporter",
         image_version="1.0.0",
         image_pull_policy="Always",
@@ -35,6 +38,7 @@ class BaseExporter(ABC):
         output_path_prefix="export",
     ):
         self.dag_id = dag_id
+        self.export_type = export_type
         self.output_bucket = output_bucket
         self.export_start_date = export_start_date
         self.export_end_date = export_end_date
@@ -54,6 +58,8 @@ class BaseExporter(ABC):
         self.excluded_images = excluded_images
         self.output_path_prefix = output_path_prefix
         self.export_concurrency = export_concurrency
+        self.export_parallel_jobs = export_parallel_jobs
+        self.export_overwrite = export_overwrite
 
     def build_dag(self):
         default_dag_args = {
@@ -95,37 +101,36 @@ class BaseExporter(ABC):
         )
 
         data_dir = "/usr/share/gcs/data"
-        max_priority = 10000
 
-        for i, (task_id, cmd) in enumerate(self.build_cmds()):
-            operator = KubernetesPodOperator(
-                task_id=task_id,
-                name=task_id,
-                namespace=self.namespace,
-                image="{name}:{version}".format(
-                    name=self.image_name, version=self.image_version
-                ),
-                cmds=["/bin/bash", "-c", cmd],
-                secrets=[secret_volume],
-                startup_timeout_seconds=120,
-                env_vars={
-                    "GOOGLE_APPLICATION_CREDENTIALS": "/var/secrets/google/service-account.json",
-                    "DATA_DIR": data_dir,
-                },
-                image_pull_policy=self.image_pull_policy,
-                resources=self.resources,
-                is_delete_operator_pod=True,
-                full_pod_spec=self.build_pod_spec(
-                    name=task_id, bucket=self.output_bucket, data_dir=data_dir
-                ),
-                node_selectors={"cloud.google.com/gke-nodepool": self.node_selector},
-                priority_weight=max_priority - (i * 10),
-                dag=dag,
-            )
+        task_id = f"export_{self.export_type}"
+        name = task_id.replace("_", "-")
+        operator = KubernetesPodOperator(
+            task_id=task_id,
+            name=name,
+            namespace=self.namespace,
+            image="{name}:{version}".format(
+                name=self.image_name, version=self.image_version
+            ),
+            cmds=["/bin/bash", "-c", self.build_cmd()],
+            secrets=[secret_volume],
+            startup_timeout_seconds=120,
+            env_vars={
+                "GOOGLE_APPLICATION_CREDENTIALS": "/var/secrets/google/service-account.json",
+                "DATA_DIR": data_dir,
+            },
+            image_pull_policy=self.image_pull_policy,
+            resources=self.resources,
+            is_delete_operator_pod=True,
+            full_pod_spec=self.build_pod_spec(
+                name=name, bucket=self.output_bucket, data_dir=data_dir
+            ),
+            node_selectors={"cloud.google.com/gke-nodepool": self.node_selector},
+            dag=dag,
+        )
         return dag
 
     @abstractmethod
-    def build_cmds(self):
+    def build_cmd(self):
         pass
 
     def build_pod_spec(self, name, bucket, data_dir):
@@ -160,7 +165,8 @@ class BaseExporter(ABC):
         pod = k8s.V1Pod(metadata=metadata, spec=k8s.V1PodSpec(containers=[container]))
         return pod
 
-    def make_unique_pod_name(self, name):
+    @staticmethod
+    def make_unique_pod_name(name):
         safe_uuid = uuid.uuid4().hex
         safe_pod_id = name + "-" + safe_uuid
 

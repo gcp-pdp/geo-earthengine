@@ -1,124 +1,70 @@
 {
-    "base": {
-        "destination_dataset_project_id": "gcp-pdp-weather-dev",
-        "destination_dataset_name": "geo_weather_dev",
-        "export_max_active_runs": 3,
-        "output_bucket": "gcp-pdp-weather-dev",
-        "output_path_prefix": "export",
-        "image_name": "gcr.io/gcp-pdp-weather-dev/geo-exporter",
-        "image_version": "1.0.0-66",
-        "image_pull_policy": "IfNotPresent",
-        "namespace": "default",
-        "node_selector": "default-pool",
-        "export_retries": 5,
-        "export_retry_delay": 300,
-        "export_max_retry_delay": 300,
-        "export_retry_exponential_backoff": "false",
-        "export_concurrency": 2,
-        "load_retries": 5,
-        "load_retry_delay": 300,
-        "load_concurrency": 2
-    },
-    "gfs_209": {
-        "destination_table_name": "NOAA_GFS0P25",
-        "node_selector": "highmem-node-pool",
-        "export_concurrency": 20,
-        "export_max_active_runs": 3,
-        "export_schedule_interval": "0 4,10,16,22 * * *",
-        "export_start_date": "2019-06-12T06:00:00",
-        "export_retries": 20,
-        "export_retry_delay": 600,
-        "export_retry_exponential_backoff": "true",
-        "export_max_retry_delay": 3600,
-        "load_schedule_interval": "10 4,10,16,22 * * *",
-        "load_start_date": "2019-06-12T06:00:00",
-        "load_concurrency": 30,
-        "load_max_active_runs": 2,
-        "load_retries": 12,
-        "load_retry_delay": 600,
-        "temp_dataset_project_id": "gcp-pdp-weather-dev",
-        "temp_dataset_name": "geo_weather_dev_temp",
-        "resources": {
-            "request_cpu": "100m",
-            "limit_cpu": "500m",
-            "request_memory": "64Mi",
-            "limit_memory": "256Mi"
-        }
-    },
-    "gfs_173": {
-        "destination_table_name": "NOAA_GFS0P25",
-        "node_selector": "highmem-node-pool",
-        "export_concurrency": 20,
-        "export_max_active_runs": 3,
-        "export_schedule_interval": "0 4,10,16,22 * * *",
-        "export_start_date": "2016-07-10T06:00:00",
-        "export_end_date": "2019-06-12T05:59:59",
-        "export_retries": 1,
-        "export_retry_delay": 300,
-        "export_retry_exponential_backoff": "false",
-        "export_max_retry_delay": 300,
-        "load_schedule_interval": "10 4,10,16,22 * * *",
-        "load_start_date": "2016-07-10T06:00:00",
-        "load_end_date": "2019-06-12T05:59:59",
-        "load_concurrency": 30,
-        "load_max_active_runs": 3,
-        "load_retries": 10,
-        "load_retry_delay": 600,
-        "temp_dataset_project_id": "gcp-pdp-weather-dev",
-        "temp_dataset_name": "geo_weather_dev_temp",
-        "resources": {
-            "request_cpu": "100m",
-            "limit_cpu": "500m",
-            "request_memory": "64Mi",
-            "limit_memory": "256Mi"
-        }
-    },
-    "gfs_012": {
-        "destination_table_name": "NOAA_GFS0P25",
-        "node_selector": "highmem-node-pool",
-        "export_concurrency": 20,
-        "export_max_active_runs": 3,
-        "export_schedule_interval": "0 4,10,16,22 * * *",
-        "export_start_date": "2015-07-01T00:00:00",
-        "export_end_date": "2016-07-10T05:59:59",
-        "export_retries": 1,
-        "export_retry_delay": 300,
-        "export_retry_exponential_backoff": "false",
-        "export_max_retry_delay": 300,
-        "load_schedule_interval": "10 4,10,16,22 * * *",
-        "load_start_date": "2015-07-01T00:00:00",
-        "load_end_date": "2016-07-10T05:59:59",
-        "load_concurrency": 30,
-        "load_max_active_runs": 3,
-        "load_retries": 10,
-        "load_retry_delay": 600,
-        "temp_dataset_project_id": "gcp-pdp-weather-dev",
-        "temp_dataset_name": "geo_weather_dev_temp",
-        "resources": {
-            "request_cpu": "100m",
-            "limit_cpu": "500m",
-            "request_memory": "64Mi",
-            "limit_memory": "256Mi"
-        }
-    },
-    "annual_npp": {
-        "destination_table_name": "annual_npp",
-        "node_selector": "highmem-node-pool",
-        "resources": {
-            "request_cpu": "100m",
-            "limit_cpu": "2",
-            "request_memory": "32Gi",
-            "limit_memory": "32Gi"
-        }
-    },
-    "world_pop": {
-        "destination_table_name": "world_pop",
-        "node_selector": "highmem-node-pool",
-        "resources": {
-            "request_cpu": "100m",
-            "limit_cpu": "3",
-            "request_memory": "32Gi",
-            "limit_memory": "32Gi"
-        }
+  "base": {
+    "destination_dataset_project_id": "gcp-pdp-weather-dev",
+    "destination_dataset_name": "geo_weather_dev",
+    "export_max_active_runs": 3,
+    "output_bucket": "gcp-pdp-weather-dev",
+    "output_path_prefix": "export",
+    "image_name": "gcr.io/gcp-pdp-weather-dev/geo-exporter",
+    "image_version": "1.0.0-77",
+    "image_pull_policy": "IfNotPresent",
+    "namespace": "default",
+    "node_selector": "default-pool",
+    "export_retries": 5,
+    "export_retry_delay": 300,
+    "export_max_retry_delay": 300,
+    "export_retry_exponential_backoff": "false",
+    "export_concurrency": 2,
+    "load_retries": 5,
+    "load_retry_delay": 300,
+    "load_concurrency": 2
+  },
+  "gfs": {
+    "node_selector": "highcpu-node-pool",
+    "destination_table_name": "NOAA_GFS0P25",
+    "load_dataset_project_id": "gcp-pdp-weather-dev",
+    "load_dataset_name": "geo_weather_dev_temp",
+    "export_concurrency": 15,
+    "export_parallel_jobs": 3,
+    "export_max_active_runs": 15,
+    "load_concurrency": 16,
+    "load_max_active_runs": 4,
+    "export_schedule_interval": "0 4,10,16,22 * * *",
+    "export_start_date": "2015-07-01",
+    "load_schedule_interval": "40 4,10,16,22 * * *",
+    "load_start_date": "2015-07-01",
+    "export_retries": 20,
+    "export_retry_delay": 600,
+    "export_retry_exponential_backoff": "true",
+    "export_max_retry_delay": 3600,
+    "export_overwrite": "true",
+    "load_retries": 12,
+    "load_retry_delay": 600,
+    "resources": {
+      "request_cpu": "200m",
+      "limit_cpu": "1500m",
+      "request_memory": "256Mi",
+      "limit_memory": "1Gi"
     }
+  },
+  "annual_npp": {
+    "destination_table_name": "annual_npp",
+    "node_selector": "highmem-node-pool",
+    "resources": {
+      "request_cpu": "100m",
+      "limit_cpu": "2",
+      "request_memory": "32Gi",
+      "limit_memory": "32Gi"
+    }
+  },
+  "world_pop": {
+    "destination_table_name": "world_pop",
+    "node_selector": "highmem-node-pool",
+    "resources": {
+      "request_cpu": "100m",
+      "limit_cpu": "3",
+      "request_memory": "32Gi",
+      "limit_memory": "32Gi"
+    }
+  }
 }

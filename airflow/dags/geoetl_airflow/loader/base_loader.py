@@ -7,6 +7,7 @@ from airflow.contrib.sensors.gcs_sensor import (
     GoogleCloudStoragePrefixSensor,
 )
 from airflow.operators.python_operator import PythonOperator
+from airflow.sensors.external_task_sensor import ExternalTaskSensor
 from google.cloud import bigquery
 from google.cloud.bigquery import TimePartitioning, RangePartitioning
 
@@ -21,11 +22,14 @@ class BaseLoader(ABC):
     def __init__(
         self,
         dag_id,
+        load_type,
         output_bucket,
         destination_dataset_project_id,
         destination_dataset_name,
         destination_table_name,
         notification_emails=None,
+        load_dataset_project_id=None,
+        load_dataset_name=None,
         load_start_date=datetime(2021, 5, 1),
         load_end_date=None,
         load_schedule_interval="0 0 * * *",
@@ -34,18 +38,26 @@ class BaseLoader(ABC):
         load_retries=5,
         load_retry_delay=300,
         output_path_prefix="export",
-        table_schema_name=None,
         table_clustering_fields=None,
         table_partitioning=None,
         table_write_disposition="WRITE_TRUNCATE",
-        **kwargs
+        **kwargs,
     ):
         self.dag_id = dag_id
+        self.load_type = load_type
         self.output_bucket = output_bucket
         self.destination_dataset_project_id = destination_dataset_project_id
         self.destination_dataset_name = destination_dataset_name
         self.destination_table_name = destination_table_name
         self.notification_emails = notification_emails
+        self.load_dataset_project_id = (
+            destination_dataset_project_id
+            if load_dataset_project_id is None
+            else load_dataset_project_id
+        )
+        self.load_dataset_name = (
+            destination_dataset_name if load_dataset_name is None else load_dataset_name
+        )
         self.load_start_date = load_start_date
         self.load_end_date = load_end_date
         self.load_schedule_interval = load_schedule_interval
@@ -54,7 +66,6 @@ class BaseLoader(ABC):
         self.load_retries = load_retries
         self.load_retry_delay = load_retry_delay
         self.output_path_prefix = output_path_prefix
-        self.table_schema_name = table_schema_name
         self.table_clustering_fields = table_clustering_fields
         self.table_partitioning = table_partitioning
         self.table_write_disposition = table_write_disposition
@@ -99,43 +110,52 @@ class BaseLoader(ABC):
             is_paused_upon_creation=True,
         )
 
-        load_task = self.add_load_tasks(dag)
+        load_task = self.add_load_task(dag)
+        self.add_aggregate_task(dag, load_task)
         return dag
 
-    def add_load_tasks(self, dag):
-        (task_id, wait_uri, load_uri) = self.task_config()
-        wait_sensor = GoogleCloudStoragePrefixSensor(
-            task_id="wait_{task_id}".format(task_id=task_id),
+    def add_load_task(self, dag):
+        wait_gcs = GoogleCloudStoragePrefixSensor(
+            task_id="wait_gcs",
             timeout=60 * 60,
             poke_interval=60,
             bucket=self.output_bucket,
-            prefix=wait_uri,
-            priority_weight=1,
+            prefix=self.build_wait_uri(),
             dag=dag,
         )
         load_operator = PythonOperator(
-            task_id="load_{task_id}".format(task_id=task_id),
-            weight_rule="upstream",
+            task_id="load_to_bigquery",
             python_callable=self.load_task,
             execution_timeout=timedelta(minutes=30),
-            op_kwargs={"uri": load_uri},
             provide_context=True,
-            priority_weight=2,
+            retries=1,
+            retry_delay=timedelta(seconds=300),
             dag=dag,
         )
-        wait_sensor >> load_operator
+        if self.load_schedule_interval is not None:
+            wait_export = ExternalTaskSensor(
+                task_id="wait_export",
+                timeout=60 * 60 * 3,
+                poke_interval=60,
+                external_dag_id=f"export_{self.load_type}_dag",
+                external_task_id=f"export_{self.load_type}",
+                execution_date_fn=lambda dt: dt.replace(minute=0, second=0),
+                dag=dag,
+            )
+            wait_gcs.set_upstream(wait_export)
+        wait_gcs >> load_operator
         return load_operator
 
-    def load_task(self, uri, **context):
+    def load_task(self, **context):
         client = bigquery.Client()
         job_config = self.create_job_config()
         table_ref = create_dataset(
             client,
-            self.destination_dataset_name,
-            project=self.destination_dataset_project_id,
-        ).table(self.destination_table_partition(context["execution_date"]))
+            self.load_dataset_name,
+            project=self.load_dataset_project_id,
+        ).table(self.load_table_name(context["execution_date"]))
         load_job = client.load_table_from_uri(
-            self.build_load_uri(uri, context["execution_date"]),
+            self.build_load_uri(context["execution_date"]),
             table_ref,
             job_config=job_config,
         )
@@ -144,7 +164,7 @@ class BaseLoader(ABC):
 
     def create_job_config(self):
         job_config = bigquery.LoadJobConfig()
-        job_config.schema = self.load_schema(self.table_schema_name)
+        job_config.schema = self.read_schema(self.load_type)
         job_config.source_format = bigquery.SourceFormat.CSV
         job_config.write_disposition = self.table_write_disposition
         job_config.ignore_unknown_values = True
@@ -156,7 +176,8 @@ class BaseLoader(ABC):
             job_config.range_partitioning = self.table_partitioning
         return job_config
 
-    def load_schema(self, schema_name):
+    @staticmethod
+    def read_schema(schema_name):
         dags_folder = os.environ.get("DAGS_FOLDER", "/home/airflow/gcs/dags")
         schema_path = os.path.join(
             dags_folder,
@@ -164,16 +185,16 @@ class BaseLoader(ABC):
         )
         return read_bigquery_schema_from_file(schema_path)
 
-    def build_load_uri(self, uri, execution_date):
-        year = execution_date.strftime("%Y")
-        return uri.format(year=year)
-
-    def destination_table_partition(self, execution_date):
-        year = execution_date.strftime("%Y")
-        return "{table}${partition}".format(
-            table=self.destination_table_name, partition=year
-        )
+    def load_table_name(self, execution_date):
+        return self.destination_table_name
 
     @abstractmethod
-    def task_config(self):
+    def build_wait_uri(self):
+        pass
+
+    @abstractmethod
+    def build_load_uri(self, execution_date):
+        pass
+
+    def add_aggregate_task(self, dag, upstream_task):
         pass
