@@ -12,7 +12,7 @@ RUN apk add --update --no-cache \
  py3-pip \
  ca-certificates \
  fuse \
- coreutils
+ parallel
 
 COPY --from=builder /go/bin/gcsfuse /usr/local/bin
 
