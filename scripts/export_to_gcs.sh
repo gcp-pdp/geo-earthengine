@@ -104,19 +104,18 @@ fetch_image() {
   esac
 }
 
-# Convert tif to csv
-convert_tif_to_csv() {
+convert_tif_to_parquet() {
   TIF_FILE=$1
-  CSV_FILE=$2
-  if [[ -s "${CSV_FILE}" && "${OVERWRITE}" = false ]]
+  PQ_FILE=$2
+  if [[ -s "${PQ_FILE}" && "${OVERWRITE}" = false ]]
   then
-    echo "Skip converting file ${CSV_FILE}: file already exist (use -r flag to overwrite)"
+    echo "Skip converting file ${PQ_FILE}: file already exist (use -r flag to overwrite)"
   elif [ -s "${TIF_FILE}" ]
   then
-    echo "Converting file: $TIF_FILE -> $CSV_FILE"
-    ./geotif-to-bqcsv.py $TIF_FILE $CSV_FILE
+    echo "Converting file: $TIF_FILE -> $PQ_FILE"
+    ./geotif_to_bqparquet.py $TIF_FILE $PQ_FILE
   else
-    echo "Error converting to csv: ${TIF_FILE} does not exist"
+    echo "Error converting to parquet: ${TIF_FILE} does not exist"
     exit 1
   fi
 }
@@ -129,15 +128,15 @@ process_image() {
     continue
   fi
   TIF_FILE=$(file_path "$NAME.tif")
-  CSV_FILE=$(file_path "$NAME.csv")
+  PQ_FILE=$(file_path "$NAME.parquet")
   mkdir -p $(dirname "$TIF_FILE")
-  mkdir -p $(dirname "$CSV_FILE")
+  mkdir -p $(dirname "$PQ_FILE")
   if [[ -s "${TIF_FILE}" && "${OVERWRITE}" = false ]]; then
     echo "Skip downloading ${TIF_FILE}: image already exists (use -r flag to overwrite)"
   else
     fetch_image $IMAGE $TIF_FILE
   fi
-  convert_tif_to_csv $TIF_FILE $CSV_FILE
+  convert_tif_to_parquet $TIF_FILE $PQ_FILE
 }
 
 # main
@@ -155,6 +154,6 @@ export OVERWRITE
 export -f process_image
 export -f file_path
 export -f fetch_image
-export -f convert_tif_to_csv
+export -f convert_tif_to_parquet
 
 parallel --jobs $JOBS process_image ::: $IMAGES
