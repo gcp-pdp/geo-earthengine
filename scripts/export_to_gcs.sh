@@ -2,7 +2,7 @@
 
 OVERWRITE=false
 
-while getopts p:j:d:y:f:e:r flag
+while getopts p:j:d:y:f:i:e:r flag
 do
   case "${flag}" in
     p) PREFIX=${OPTARG};;
@@ -10,6 +10,7 @@ do
     d) DATE=${OPTARG};;
     y) YEAR=${OPTARG};;
     f) TASK=${OPTARG};;
+    i) INCLUDE=${OPTARG};;
     e) EXCLUDE=${OPTARG};;
     r) OVERWRITE=true;;
   esac
@@ -123,9 +124,13 @@ convert_tif_to_parquet() {
 process_image() {
   IMAGE=$1
   NAME=$(basename "$IMAGE")
+  if [[ -n "$INCLUDE" && ! ",$INCLUDE," = *",$NAME,"* ]]; then
+    echo "Skip $NAME: image is not in include list"
+    return
+  fi
   if [[ -n "$EXCLUDE" && ",$EXCLUDE," = *",$NAME,"* ]]; then
-    echo "Exclude image $NAME"
-    continue
+    echo "Skip $NAME: image is in exclude list"
+    return
   fi
   TIF_FILE=$(file_path "$NAME.tif")
   PQ_FILE=$(file_path "$NAME.parquet")
@@ -149,6 +154,7 @@ fi
 export DATA_DIR
 export TASK
 export PREFIX
+export INCLUDE
 export EXCLUDE
 export OVERWRITE
 export -f process_image
