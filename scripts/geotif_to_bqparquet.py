@@ -15,11 +15,11 @@ import sys
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-from shapely.geometry import box
-from shapely.wkt import dumps
+import time
 from osgeo import gdal
 import numpy as np
-from datetime import datetime
+
+start_time = time.time()
 
 # default GDAL block size for chunk-by-chunk processing
 block_size = 256
@@ -72,13 +72,12 @@ for md in mds:
         bq_attr_fields.append(f"{md}:INTEGER")
         pq_attr_fields.append((md, pa.int32()))
 
-
 print(
     ",".join(
         ["geography:GEOGRAPHY", "geography_polygon:GEOGRAPHY"]
         + bq_attr_fields
         + [
-            f"{ds.GetRasterBand(iband+1).GetDescription()}:{outtype}"
+            f"{ds.GetRasterBand(iband + 1).GetDescription()}:{outtype}"
             for iband in range(ds.RasterCount)
         ]
     )
@@ -103,13 +102,15 @@ outfile = sys.argv[2]
 # prepare transfrom from pixel to raster coordinates
 gt = ds.GetGeoTransform()
 
-# with open(outfile, "w") as fd:
+hw = (0.5 * gt[1])
+hh = (0.5 * -gt[5])
+
 with pq.ParquetWriter(outfile, pq_schema) as writer:
     for ix, iy in np.ndindex(
-        (
-            int(np.round(xsize / block_size + 0.5)),
-            int(np.round(ysize / block_size + 0.5)),
-        )
+            (
+                    int(np.round(xsize / block_size + 0.5)),
+                    int(np.round(ysize / block_size + 0.5)),
+            )
     ):
         xblock = int(np.min([xsize - ix * block_size, block_size]))
         yblock = int(np.min([ysize - iy * block_size, block_size]))
@@ -132,13 +133,17 @@ with pq.ParquetWriter(outfile, pq_schema) as writer:
         max_ys = (geo_ys + (0.5 * -gt[5])).ravel().clip(-90, 90).round(8)
         min_ys = (geo_ys - (0.5 * -gt[5])).ravel().clip(-90, 90).round(8)
 
-        boxes = zip(min_xs, min_ys, max_xs, max_ys)
-
         rows = [
-            ["POINT(%.10g %.10g)" % (x, y), dumps(box(*p), trim=True), *attr_values, *vals]
-            for (x, y, p, vals) in zip(geo_xs.ravel(), geo_ys.ravel(), boxes, array)
+            ["POINT(%.10g %.10g)" % (x, y),
+             "POLYGON ((%.10g %.10g, %.10g %.10g, %.10g %.10g, %.10g %.10g, %.10g %.10g))" % (
+             max_x, min_y, max_x, max_y, min_x, max_y, min_x, min_y, max_x, min_y), *attr_values, *vals]
+            for (x, y, min_x, max_x, min_y, max_y, vals) in
+            zip(geo_xs.ravel(), geo_ys.ravel(), min_xs, max_xs, min_ys, max_ys, array)
         ]
 
         df = pd.DataFrame(rows, columns=columns)
         table = pa.Table.from_pandas(df, schema=pq_schema)
         writer.write_table(table)
+
+end_time = time.time()
+print(f"Conversion took {end_time - start_time} seconds")
