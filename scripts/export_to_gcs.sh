@@ -71,7 +71,8 @@ list_images() {
       ;;
     annual_npp)
       COLLECTION="projects/earthengine-public/assets/MODIS/006/MOD17A3HGF"
-      IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
+      IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "startTime='$DATE' and endTime='$DATE'" \
+      | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
       ;;
   esac
   echo $IMAGES
