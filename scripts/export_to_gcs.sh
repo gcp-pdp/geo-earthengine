@@ -2,7 +2,7 @@
 
 OVERWRITE=false
 
-while getopts p:j:d:y:f:i:e:r flag
+while getopts p:j:d:y:f:i:c:e:r flag
 do
   case "${flag}" in
     p) PREFIX=${OPTARG};;
@@ -11,6 +11,7 @@ do
     y) YEAR=${OPTARG};;
     f) TASK=${OPTARG};;
     i) INCLUDE=${OPTARG};;
+    c) COUNTRY=${OPTARG};;
     e) EXCLUDE=${OPTARG};;
     r) OVERWRITE=true;;
   esac
@@ -33,6 +34,8 @@ echo "PREFIX=${PREFIX}"
 echo "DATE=${DATE}"
 echo "YEAR=${YEAR}"
 echo "TASK=${TASK}"
+echo "COUNTRY=${COUNTRY}"
+echo "INCLUDE=${INCLUDE}"
 echo "EXCLUDE=${EXCLUDE}"
 echo "OVERWRITE=${OVERWRITE}"
 
@@ -67,7 +70,7 @@ list_images() {
       ;;
     world_pop)
       COLLECTION="projects/earthengine-public/assets/WorldPop/GP/100m/pop"
-      IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "year=$YEAR" | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
+      IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "country='$COUNTRY' and year=$YEAR" | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
       ;;
     annual_npp)
       COLLECTION="projects/earthengine-public/assets/MODIS/006/MOD17A3HGF"
