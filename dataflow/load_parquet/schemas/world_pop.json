@@ -12,21 +12,21 @@
         "description": "WGS84 Polygon Geometry"
     },
     {
+        "name": "country",
+        "type": "STRING",
+        "mode": "REQUIRED",
+        "description": "Country"
+    },
+    {
         "name": "year",
         "type": "INTEGER",
         "mode": "REQUIRED",
         "description": "Year"
     },
     {
-        "name": "npp",
-        "type": "INTEGER",
+        "name": "population",
+        "type": "FLOAT",
         "mode": "REQUIRED",
-        "description": "Net primary productivity, kg*C/m^2. Range [-30000, 32700] with scale 0.0001"
-    },
-    {
-        "name": "npp_qc",
-        "type": "INTEGER",
-        "mode": "REQUIRED",
-        "description": "Quality control percentage, %. Range [0, 100]"
+        "description": "Estimated number of people residing in each grid cell. Estimated range [0, 21171]"
     }
 ]

@@ -1,8 +1,9 @@
 import json
 import logging
+import os
 
-from google.cloud import bigquery
 from google.api_core.exceptions import Conflict, NotFound, Forbidden
+from google.cloud import bigquery
 
 from geoetl_airflow.utils.file_utils import read_file
 
@@ -10,7 +11,7 @@ from geoetl_airflow.utils.file_utils import read_file
 def create_dataset(client, dataset_name, project=None):
     dataset = client.dataset(dataset_name, project=project)
     try:
-        logging.info("Creating new dataset ...")
+        logging.info(f"Creating new dataset {project}.{dataset_name}...")
         dataset = client.create_dataset(dataset)
         logging.info("New dataset created: " + dataset_name)
     except Conflict as error:

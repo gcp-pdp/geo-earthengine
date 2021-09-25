@@ -38,7 +38,7 @@ Airflow DAGs for exporting and loading the geo weather data to Google BigQuery:
    
     Note that if Composer API is not enabled the command above will auto prompt to enable it.
    
-3. [Optional] Create node pool for exporting annual npp and world pop.
+3. Create node pool for exporter.
    
     ```bash
     gcloud container node-pools create highmem-node-pool \
@@ -47,7 +47,8 @@ Airflow DAGs for exporting and loading the geo weather data to Google BigQuery:
     --num-nodes=1
     ```
    
-4. Create GCP Service Account with key file and create Kubernetes secret:
+4. Create GCP Service Account and register to [Earth Engine](https://signup.earthengine.google.com/#!/service_accounts).
+   Create Kubernetes secret with the service account key file.
     ```bash
     gcloud container clusters get-credentials {CLUSTER_ID} --zone {ZONE} --project ${PROJECT}
     kubectl create secret generic service-account --from-file service-account.json={SERVICE_ACCOUNT_KEY.json} 
@@ -88,6 +89,8 @@ to configure email notifications.
 | `export_retry_exponential_backoff` | enable retry exponential backoff for export task, default: `true` |
 | `export_max_active_runs` | maximum active instance of export dag run |
 | `export_concurrency` | maximum active instance of export task |
+| `export_parallel_jobs` | number of concurrent processes for an instance of exporter |
+| `export_overwrite` | whether to overwrite existing exported files |
 | `image_name` | exporter docker image name, default: `gcr.io/gcp-pdp-weather-dev/geo-exporter` |
 | `image_version` | exporter docker image version |
 | `image_pull_policy` | exporter docker image pull policy, default: `Always` |

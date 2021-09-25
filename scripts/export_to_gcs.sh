@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 
-while getopts o:p:d:i:y:f:e: flag
+OVERWRITE=false
+
+while getopts p:j:d:y:f:i:c:e:r flag
 do
   case "${flag}" in
-    o) BUCKET=${OPTARG};;
     p) PREFIX=${OPTARG};;
+    j) JOBS=${OPTARG};;
     d) DATE=${OPTARG};;
-    i) INTERVAL=${OPTARG};;
     y) YEAR=${OPTARG};;
     f) TASK=${OPTARG};;
+    i) INCLUDE=${OPTARG};;
+    c) COUNTRY=${OPTARG};;
     e) EXCLUDE=${OPTARG};;
+    r) OVERWRITE=true;;
   esac
 done
 
@@ -20,6 +24,20 @@ fi
 if [ -z "$DATA_DIR" ] ; then
     DATA_DIR=$(pwd)
 fi
+
+if [ -z "$JOBS" ] ; then
+    JOBS=1
+fi
+
+echo "JOBS=${JOBS}"
+echo "PREFIX=${PREFIX}"
+echo "DATE=${DATE}"
+echo "YEAR=${YEAR}"
+echo "TASK=${TASK}"
+echo "COUNTRY=${COUNTRY}"
+echo "INCLUDE=${INCLUDE}"
+echo "EXCLUDE=${EXCLUDE}"
+echo "OVERWRITE=${OVERWRITE}"
 
 cat << EOF >> modis.prj
 PROJCS["MODIS Sinusoidal",
@@ -47,16 +65,17 @@ list_images() {
   case "${TASK}" in
     gfs)
       COLLECTION="projects/earthengine-public/assets/NOAA/GFS0P25"
-      IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "startTime='$DATE' and endTime='$DATE' and forecast_hours=$INTERVAL" \
+      IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "startTime='$DATE' and endTime='$DATE'" \
       | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
       ;;
     world_pop)
       COLLECTION="projects/earthengine-public/assets/WorldPop/GP/100m/pop"
-      IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "year=$YEAR" | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
+      IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "country='$COUNTRY' and year=$YEAR" | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
       ;;
     annual_npp)
       COLLECTION="projects/earthengine-public/assets/MODIS/006/MOD17A3HGF"
-      IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
+      IMAGES=$(ogrinfo -ro -al "EEDA:" -oo "COLLECTION=$COLLECTION" -where "startTime='$DATE' and endTime='$DATE'" \
+      | grep 'gdal_dataset (String) = ' | cut -d '=' -f2 | tr -d ' ')
       ;;
   esac
   echo $IMAGES
@@ -90,21 +109,43 @@ fetch_image() {
   esac
 }
 
-# Convert tif to csv
-convert_tif_to_csv() {
+convert_tif_to_parquet() {
   TIF_FILE=$1
-  CSV_FILE=$2
-  if [ -s "${CSV_FILE}" ]
+  PQ_FILE=$2
+  if [[ -s "${PQ_FILE}" && "${OVERWRITE}" = false ]]
   then
-    echo "File ${CSV_FILE} is already exist"
+    echo "Skip converting file ${PQ_FILE}: file already exist (use -r flag to overwrite)"
   elif [ -s "${TIF_FILE}" ]
   then
-    echo "Converting file: $TIF_FILE -> $CSV_FILE"
-    ./geotif-to-bqcsv.py $TIF_FILE $CSV_FILE
+    echo "Converting file: $TIF_FILE -> $PQ_FILE"
+    ./geotif_to_bqparquet.py $TIF_FILE $PQ_FILE
   else
-    echo "${TIF_FILE} does not exist"
+    echo "Error converting to parquet: ${TIF_FILE} does not exist"
     exit 1
   fi
+}
+
+process_image() {
+  IMAGE=$1
+  NAME=$(basename "$IMAGE")
+  if [[ -n "$INCLUDE" && ! ",$INCLUDE," = *",$NAME,"* ]]; then
+    echo "Skip $NAME: image is not in include list"
+    return
+  fi
+  if [[ -n "$EXCLUDE" && ",$EXCLUDE," = *",$NAME,"* ]]; then
+    echo "Skip $NAME: image is in exclude list"
+    return
+  fi
+  TIF_FILE=$(file_path "$NAME.tif")
+  PQ_FILE=$(file_path "$NAME.parquet")
+  mkdir -p $(dirname "$TIF_FILE")
+  mkdir -p $(dirname "$PQ_FILE")
+  if [[ -s "${TIF_FILE}" && "${OVERWRITE}" = false ]]; then
+    echo "Skip downloading ${TIF_FILE}: image already exists (use -r flag to overwrite)"
+  else
+    fetch_image $IMAGE $TIF_FILE
+  fi
+  convert_tif_to_parquet $TIF_FILE $PQ_FILE
 }
 
 # main
@@ -114,21 +155,15 @@ if [ -z "$IMAGES" ] ; then
     exit 1
 fi
 
-for IMAGE in $IMAGES
-do
-  NAME=$(basename "$IMAGE")
-  if [[ -n "$EXCLUDE" && ",$EXCLUDE," = *",$NAME,"* ]]; then
-    echo "Skip image $NAME"
-    continue
-  fi
-  TIF_FILE=$(file_path "$NAME.tif")
-  CSV_FILE=$(file_path "$NAME.csv")
-  mkdir -p $(dirname "$TIF_FILE")
-  mkdir -p $(dirname "$CSV_FILE")
-  if [ -s "${TIF_FILE}" ]; then
-    echo "Image already downloaded: ${TIF_FILE}"
-  else
-    fetch_image $IMAGE $TIF_FILE
-  fi
-  convert_tif_to_csv $TIF_FILE $CSV_FILE
-done
+export DATA_DIR
+export TASK
+export PREFIX
+export INCLUDE
+export EXCLUDE
+export OVERWRITE
+export -f process_image
+export -f file_path
+export -f fetch_image
+export -f convert_tif_to_parquet
+
+parallel --jobs $JOBS process_image ::: $IMAGES

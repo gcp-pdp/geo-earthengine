@@ -17,9 +17,9 @@ AS
 SELECT
     ST_ASTEXT(geography),
     ST_ASTEXT(geography_polygon),
-    creation_time,
-    forecast_hours,
-    forecast_time,
+    DATETIME(creation_time),
+    IFNULL(forecast_hours, TIMESTAMP_DIFF(forecast_time, creation_time, HOUR)),
+    DATETIME(forecast_time),
     temperature_2m_above_ground,
     specific_humidity_2m_above_ground,
     relative_humidity_2m_above_ground,
@@ -30,9 +30,12 @@ SELECT
     total_cloud_cover_entire_atmosphere,
     downward_shortwave_radiation_flux
 FROM
-    `{{ project_id }}.{{ dataset_temp }}.{{ table_temp }}`;
+    `{{ source_project_id }}.{{ source_dataset }}.{{ source_table }}`;
 
-INSERT INTO `{{ project_id }}.{{ dataset }}.{{ table }}`
+DELETE FROM `{{ destination_project_id }}.{{ destination_dataset }}.{{ destination_table }}`
+WHERE creation_time='{{ creation_time }}';
+
+INSERT INTO `{{ destination_project_id }}.{{ destination_dataset }}.{{ destination_table }}`
 (
     creation_time,
     geography,
