@@ -38,7 +38,7 @@ Airflow DAGs for exporting and loading the geo weather data to Google BigQuery:
    
     Note that if Composer API is not enabled the command above will auto prompt to enable it.
    
-3. [Optional] Create node pool for exporting annual npp and world pop.
+3. Create node pool for exporter.
    
     ```bash
     gcloud container node-pools create highmem-node-pool \
@@ -47,7 +47,8 @@ Airflow DAGs for exporting and loading the geo weather data to Google BigQuery:
     --num-nodes=1
     ```
    
-4. Create GCP Service Account with key file and create Kubernetes secret:
+4. Create GCP Service Account and register to [Earth Engine](https://signup.earthengine.google.com/#!/service_accounts).
+   Create Kubernetes secret with the service account key file.
     ```bash
     gcloud container clusters get-credentials {CLUSTER_ID} --zone {ZONE} --project ${PROJECT}
     kubectl create secret generic service-account --from-file service-account.json={SERVICE_ACCOUNT_KEY.json} 

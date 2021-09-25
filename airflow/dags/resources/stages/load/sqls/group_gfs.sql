@@ -17,9 +17,9 @@ AS
 SELECT
     ST_ASTEXT(geography),
     ST_ASTEXT(geography_polygon),
-    creation_time,
-    forecast_hours,
-    forecast_time,
+    DATETIME(creation_time),
+    IFNULL(forecast_hours, TIMESTAMP_DIFF(forecast_time, creation_time, HOUR)),
+    DATETIME(forecast_time),
     temperature_2m_above_ground,
     specific_humidity_2m_above_ground,
     relative_humidity_2m_above_ground,

@@ -3,10 +3,7 @@ from datetime import datetime
 from airflow.models import Variable
 
 
-def read_export_dag_vars(group, **kwargs):
-    """Read Airflow variables for Export DAG"""
-
-    vars = read_vars(group, **kwargs)
+def get_export_dag_vars(vars):
     return {
         "output_bucket": vars.get("output_bucket"),
         "export_start_date": parse_date(vars.get("export_start_date")),
@@ -29,23 +26,38 @@ def read_export_dag_vars(group, **kwargs):
         "export_concurrency": parse_int(vars.get("export_concurrency")),
         "export_parallel_jobs": parse_int(vars.get("export_parallel_jobs")),
         "node_selector": vars.get("node_selector"),
+        "included_images": vars.get("included_images"),
         "excluded_images": vars.get("excluded_images"),
         "export_overwrite": parse_bool(vars.get("export_overwrite")),
+        "export_secret": vars.get("export_secret"),
     }
 
 
-def read_load_dag_vars(group, **kwargs):
-    """Read Airflow variables for Load DAG"""
+def read_export_gfs_dag_vars(**kwargs):
+    vars = read_vars("gfs", **kwargs)
+    return get_export_dag_vars(vars)
 
-    vars = read_vars(group, **kwargs)
+
+def read_export_npp_dag_vars(**kwargs):
+    vars = read_vars("annual_npp", **kwargs)
+    return get_export_dag_vars(vars)
+
+
+def read_export_worldpop_dag_vars(**kwargs):
+    vars = read_vars("world_pop", **kwargs)
+    return {
+        **get_export_dag_vars(vars),
+        "countries": vars.get("countries"),
+    }
+
+
+def get_load_dag_vars(vars):
     return {
         "output_bucket": vars.get("output_bucket"),
         "output_path_prefix": vars.get("output_path_prefix"),
         "destination_dataset_project_id": vars.get("destination_dataset_project_id"),
         "destination_dataset_name": vars.get("destination_dataset_name"),
         "destination_table_name": vars.get("destination_table_name"),
-        "load_dataset_project_id": vars.get("load_dataset_project_id"),
-        "load_dataset_name": vars.get("load_dataset_name"),
         "notification_emails": vars.get("notification_emails"),
         "load_schedule_interval": vars.get("load_schedule_interval"),
         "load_max_active_runs": parse_int(vars.get("load_max_active_runs")),
@@ -55,6 +67,33 @@ def read_load_dag_vars(group, **kwargs):
         "load_retries": parse_int(vars.get("load_retries")),
         "load_retry_delay": parse_int(vars.get("load_retry_delay")),
     }
+
+
+def read_load_gfs_dag_vars(**kwargs):
+    vars = read_vars("gfs", **kwargs)
+    return {
+        **get_load_dag_vars(vars),
+        "staging_dataset_project_id": vars.get("staging_dataset_project_id"),
+        "staging_dataset_name": vars.get("staging_dataset_name"),
+    }
+
+
+def read_load_worldpop_dag_vars(**kwargs):
+    vars = read_vars("world_pop", **kwargs)
+    return {
+        **get_load_dag_vars(vars),
+        "countries": vars.get("countries"),
+        "large_countries": vars.get("large_countries"),
+        "staging_dataset_project_id": vars.get("staging_dataset_project_id"),
+        "staging_dataset_name": vars.get("staging_dataset_name"),
+        "dataflow_template_path": vars.get("dataflow_template_path"),
+        "dataflow_environment": vars.get("dataflow_environment"),
+    }
+
+
+def read_load_npp_dag_vars(**kwargs):
+    vars = read_vars("annual_npp", **kwargs)
+    return get_load_dag_vars(vars)
 
 
 def read_vars(var_name, **kwargs):

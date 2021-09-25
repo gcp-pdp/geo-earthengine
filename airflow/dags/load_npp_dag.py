@@ -2,17 +2,16 @@ from __future__ import print_function
 
 import logging
 
-from geoetl_airflow.build_load_dag import build_load_dag
-from geoetl_airflow.variables import read_load_dag_vars
+from geoetl_airflow.build_load_npp_dag import build_load_npp_dag
+from geoetl_airflow.variables import read_load_npp_dag_vars
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 
 # airflow DAG
-DAG = build_load_dag(
-    data_type="ANNUAL_NPP",
+DAG = build_load_npp_dag(
     dag_id="load_annual_npp_dag",
-    **read_load_dag_vars(
+    **read_load_npp_dag_vars(
         group="annual_npp",
         destination_table_name="annual_npp",
         load_schedule_interval=None,

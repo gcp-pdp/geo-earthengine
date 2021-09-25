@@ -20,13 +20,13 @@
     {
         "name": "npp",
         "type": "INTEGER",
-        "mode": "NULLABLE",
+        "mode": "REQUIRED",
         "description": "Net primary productivity, kg*C/m^2. Range [-30000, 32700] with scale 0.0001"
     },
     {
         "name": "npp_qc",
         "type": "INTEGER",
-        "mode": "NULLABLE",
+        "mode": "REQUIRED",
         "description": "Quality control percentage, %. Range [0, 100]"
     }
 ]

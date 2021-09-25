@@ -6,7 +6,7 @@
     "output_bucket": "gcp-pdp-weather-dev",
     "output_path_prefix": "export",
     "image_name": "gcr.io/gcp-pdp-weather-dev/geo-exporter",
-    "image_version": "1.0.0-77",
+    "image_version": "1.0.0-89",
     "image_pull_policy": "IfNotPresent",
     "namespace": "default",
     "node_selector": "default-pool",
@@ -15,6 +15,8 @@
     "export_max_retry_delay": 300,
     "export_retry_exponential_backoff": "false",
     "export_concurrency": 2,
+    "export_overwrite": "false",
+    "export_secret": "service-account",
     "load_retries": 5,
     "load_retry_delay": 300,
     "load_concurrency": 2
@@ -37,7 +39,6 @@
     "export_retry_delay": 600,
     "export_retry_exponential_backoff": "true",
     "export_max_retry_delay": 3600,
-    "export_overwrite": "true",
     "load_retries": 12,
     "load_retry_delay": 600,
     "resources": {
@@ -48,8 +49,9 @@
     }
   },
   "annual_npp": {
-    "destination_table_name": "annual_npp",
+    "destination_table_name": "MODIS_MOD17A3HGF",
     "node_selector": "highmem-node-pool",
+    "export_secret": "npp-service-account",
     "resources": {
       "request_cpu": "100m",
       "limit_cpu": "2",
@@ -58,13 +60,24 @@
     }
   },
   "world_pop": {
-    "destination_table_name": "world_pop",
+    "countries": "AFG,ALB,DZA,ASM,AND,AGO,AIA,ATA,ATG,ARG,ARM,ABW,AUS,AUT,AZE,BHS,BHR,BGD,BRB,BLR,BEL,BLZ,BEN,BMU,BTN,BOL,BES,BIH,BWA,BVT,BRA,IOT,BRN,BGR,BFA,BDI,CPV,KHM,CMR,CAN,CYM,CAF,TCD,CHL,CHN,CXR,CCK,COL,COM,COD,COG,COK,CRI,HRV,CUB,CUW,CYP,CZE,CIV,DNK,DJI,DMA,DOM,ECU,EGY,SLV,GNQ,ERI,EST,SWZ,ETH,FLK,FRO,FJI,FIN,FRA,GUF,PYF,ATF,GAB,GMB,GEO,DEU,GHA,GIB,GRC,GRL,GRD,GLP,GUM,GTM,GGY,GIN,GNB,GUY,HTI,HMD,VAT,HND,HKG,HUN,ISL,IND,IDN,IRN,IRQ,IRL,IMN,ISR,ITA,JAM,JPN,JEY,JOR,KAZ,KEN,KIR,PRK,KOR,KWT,KGZ,LAO,LVA,LBN,LSO,LBR,LBY,LIE,LTU,LUX,MAC,MDG,MWI,MYS,MDV,MLI,MLT,MHL,MTQ,MRT,MUS,MYT,MEX,FSM,MDA,MCO,MNG,MNE,MSR,MAR,MOZ,MMR,NAM,NRU,NPL,NLD,NCL,NZL,NIC,NER,NGA,NIU,NFK,MNP,NOR,OMN,PAK,PLW,PSE,PAN,PNG,PRY,PER,PHL,PCN,POL,PRT,PRI,QAT,MKD,ROU,RUS,RWA,REU,BLM,SHN,KNA,LCA,MAF,SPM,VCT,WSM,SMR,STP,SAU,SEN,SRB,SYC,SLE,SGP,SXM,SVK,SVN,SLB,SOM,ZAF,SGS,SSD,ESP,LKA,SDN,SUR,SJM,SWE,CHE,SYR,TWN,TJK,TZA,THA,TLS,TGO,TKL,TON,TTO,TUN,TUR,TKM,TCA,TUV,UGA,UKR,ARE,GBR,UMI,USA,URY,UZB,VUT,VEN,VNM,VGB,VIR,WLF,ESH,YEM,ZMB,ZWE,ALA",
+    "large_countries": "ATA,CAN,RUS,UMI,USA",
+    "dataflow_template_path": "gs://gcp-pdp-weather-dev-dataflow/templates",
+    "dataflow_environment": {
+       "machineType": "n1-standard-2",
+       "maxWorkers": 10,
+       "numWorkers": 5
+    },
+    "destination_table_name": "WorldPop_GP_100m",
+    "staging_dataset_project_id": "gcp-pdp-weather-dev",
+    "staging_dataset_name": "geo_weather_dev_temp",
     "node_selector": "highmem-node-pool",
+    "export_secret": "wp-service-account",
     "resources": {
-      "request_cpu": "100m",
-      "limit_cpu": "3",
-      "request_memory": "32Gi",
-      "limit_memory": "32Gi"
+      "request_cpu": "2",
+      "limit_cpu": "4",
+      "request_memory": "2Gi",
+      "limit_memory": "16Gi"
     }
   }
 }
