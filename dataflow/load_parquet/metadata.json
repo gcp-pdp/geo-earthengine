@@ -1,0 +1,21 @@
+{
+  "name": "Load Parquet flex template",
+  "description": "Dataflow flex template for loading parquet files to BigQuery",
+  "parameters": [
+    {
+      "name": "input-file",
+      "label": "Input file.",
+      "helpText": "The file path for the input text to process."
+    },
+    {
+      "name": "output-table",
+      "label": "BigQuery output table name.",
+      "helpText": "Name of the BigQuery output table name."
+    },
+    {
+      "name": "output-schema",
+      "label": "BigQuery output table schema.",
+      "helpText": "Path to BigQuery output table schema file."
+    }
+  ]
+}
